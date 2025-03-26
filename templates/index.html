@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Transmissão de Áudio</title>
+    <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.0.0/dist/socket.io.min.js"></script>
+</head>
+<body>
+    <input type="file" id="audioFile" accept="audio/*">
+    <button onclick="sendAudio()">Enviar Áudio</button>
+    
+    <h2>Reprodutor</h2>
+    <audio id="audioPlayer" controls></audio>
+    
+    <p id="status">Status: Aguardando...</p>
+
+    <script>
+        const socket = io('192.168.1.2:5000');
+        const audioBuffers = {};  // Armazena buffers por stream_id
+        
+        function sendAudio() {
+            const fileInput = document.getElementById('audioFile');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert("Por favor, selecione um arquivo de áudio.");
+                return;
+            }
+            
+            document.getElementById('status').innerText = "Preparando envio...";
+            
+            const chunkSize = 1024 * 512;  // 512KB
+            const totalChunks = Math.ceil(file.size / chunkSize);
+            
+            // Envia metadados primeiro
+            socket.emit('audio_metadata', {
+                type: file.type,
+                totalChunks: totalChunks
+            });
+            
+            // Envia os chunks
+            for (let i = 0; i < totalChunks; i++) {
+                const start = i * chunkSize;
+                const end = Math.min(start + chunkSize, file.size);
+                const chunk = file.slice(start, end);
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    socket.emit('audio_chunk', {
+                        chunkId: i,
+                        data: e.target.result
+                    });
+                };
+                reader.readAsArrayBuffer(chunk);
+            }
+        }
+        
+        // Recebe chunks de áudio (de qualquer cliente)
+        socket.on('audio_processed', function(data) {
+            document.getElementById('status').innerText = 
+                `Recebendo chunk ${data.chunkId + 1} de ${data.total_chunks}`;
+            
+            // Inicializa o buffer se for um novo stream
+            if (!audioBuffers[data.stream_id]) {
+                audioBuffers[data.stream_id] = {
+                    chunks: [],
+                    received: 0,
+                    total: data.total_chunks
+                };
+            }
+            
+            // Armazena o chunk recebido
+            audioBuffers[data.stream_id].chunks[data.chunkId] = data.data;
+            audioBuffers[data.stream_id].received++;
+            
+            // Quando todos chunks forem recebidos
+            if (audioBuffers[data.stream_id].received === data.total_chunks) {
+                const chunks = audioBuffers[data.stream_id].chunks;
+                const audioBlob = new Blob(chunks, { type: 'audio/*' });
+                const audioUrl = URL.createObjectURL(audioBlob);
+                
+                const player = document.getElementById('audioPlayer');
+                player.src = audioUrl;
+                player.onloadedmetadata = () => {
+                    document.getElementById('status').innerText = "Áudio pronto para reprodução!";
+                    player.play().catch(e => console.error("Erro ao reproduzir:", e));
+                };
+                
+                // Limpa o buffer após uso
+                delete audioBuffers[data.stream_id];
+            }
+        });
+        
+        socket.on('connect', () => {
+            document.getElementById('status').innerText = "Conectado ao servidor";
+        });
+        
+        socket.on('disconnect', () => {
+            document.getElementById('status').innerText = "Desconectado do servidor";
+        });
+    </script>
+</body>
+</html>
