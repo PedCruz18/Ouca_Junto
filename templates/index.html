@@ -3,90 +3,95 @@
 <head>
     <title>Transmissão de Áudio</title>
     <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.0.0/dist/socket.io.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="static/css/index.css">
 </head>
 <body>
-    <input type="file" id="audioFile" accept="audio/*">
-    <button onclick="sendAudio()">Enviar Áudio</button>
-    
-    <h2>Reprodutor</h2>
-    <audio id="audioPlayer" controls></audio>
+    <h1>Transmissão de Áudio</h1>
+    <div class="file-upload-container">
+        <input type="file" id="arquivoAudio" accept="audio/*" class="file-input">
+        <button onclick="enviarAudio()" class="send-button">
+            <i class="fas fa-paper-plane"></i>
+        </button>
+    </div>
+    <audio id="reprodutorAudio" controls></audio>
     
     <p id="status">Status: Aguardando...</p>
 
     <script>
-        const socket = io('192.168.1.2:5000');
-        const audioBuffers = {};  // Armazena buffers por stream_id
+        const socket = io('http://192.168.1.2:5000');
+        const buffersAudio = {};  // Armazena buffers por id_transmissao
         
-        function sendAudio() {
-            const fileInput = document.getElementById('audioFile');
-            const file = fileInput.files[0];
+        function enviarAudio() {
+            const entradaArquivo = document.getElementById('arquivoAudio');
+            const arquivo = entradaArquivo.files[0];
             
-            if (!file) {
+            if (!arquivo) {
                 alert("Por favor, selecione um arquivo de áudio.");
                 return;
             }
             
             document.getElementById('status').innerText = "Preparando envio...";
             
-            const chunkSize = 1024 * 512;  // 512KB
-            const totalChunks = Math.ceil(file.size / chunkSize);
+            const tamanhoPedaco = 1024 * 512;  // 512KB
+            const totalPedaços = Math.ceil(arquivo.size / tamanhoPedaco);
             
             // Envia metadados primeiro
             socket.emit('audio_metadata', {
-                type: file.type,
-                totalChunks: totalChunks
+                type: arquivo.type,
+                totalChunks: totalPedaços
             });
             
-            // Envia os chunks
-            for (let i = 0; i < totalChunks; i++) {
-                const start = i * chunkSize;
-                const end = Math.min(start + chunkSize, file.size);
-                const chunk = file.slice(start, end);
+            // Envia os pedaços
+            for (let i = 0; i < totalPedaços; i++) {
+                const inicio = i * tamanhoPedaco;
+                const fim = Math.min(inicio + tamanhoPedaco, arquivo.size);
+                const pedaco = arquivo.slice(inicio, fim);
                 
-                const reader = new FileReader();
-                reader.onload = function(e) {
+                const leitor = new FileReader();
+                leitor.onload = function(e) {
                     socket.emit('audio_chunk', {
                         chunkId: i,
                         data: e.target.result
                     });
                 };
-                reader.readAsArrayBuffer(chunk);
+                leitor.readAsArrayBuffer(pedaco);
             }
         }
         
-        // Recebe chunks de áudio (de qualquer cliente)
-        socket.on('audio_processed', function(data) {
+        // Recebe pedaços de áudio
+        socket.on('audio_processed', function(dados) {
             document.getElementById('status').innerText = 
-                `Recebendo chunk ${data.chunkId + 1} de ${data.total_chunks}`;
+                `Recebendo pedaço ${dados.id_pedaco + 1} de ${dados.total_pedaços}`;
             
             // Inicializa o buffer se for um novo stream
-            if (!audioBuffers[data.stream_id]) {
-                audioBuffers[data.stream_id] = {
-                    chunks: [],
-                    received: 0,
-                    total: data.total_chunks
+            if (!buffersAudio[dados.id_transmissao]) {
+                buffersAudio[dados.id_transmissao] = {
+                    pedaços: [],
+                    recebidos: 0,
+                    total: dados.total_pedaços
                 };
             }
             
-            // Armazena o chunk recebido
-            audioBuffers[data.stream_id].chunks[data.chunkId] = data.data;
-            audioBuffers[data.stream_id].received++;
+            // Armazena o pedaço recebido
+            buffersAudio[dados.id_transmissao].pedaços[dados.id_pedaco] = dados.dados;
+            buffersAudio[dados.id_transmissao].recebidos++;
             
-            // Quando todos chunks forem recebidos
-            if (audioBuffers[data.stream_id].received === data.total_chunks) {
-                const chunks = audioBuffers[data.stream_id].chunks;
-                const audioBlob = new Blob(chunks, { type: 'audio/*' });
-                const audioUrl = URL.createObjectURL(audioBlob);
+            // Quando todos os pedaços forem recebidos
+            if (buffersAudio[dados.id_transmissao].recebidos === dados.total_pedaços) {
+                const pedaços = buffersAudio[dados.id_transmissao].pedaços;
+                const blobAudio = new Blob(pedaços, { type: 'audio/*' });
+                const urlAudio = URL.createObjectURL(blobAudio);
                 
-                const player = document.getElementById('audioPlayer');
-                player.src = audioUrl;
-                player.onloadedmetadata = () => {
+                const reprodutor = document.getElementById('reprodutorAudio');
+                reprodutor.src = urlAudio;
+                reprodutor.onloadedmetadata = () => {
                     document.getElementById('status').innerText = "Áudio pronto para reprodução!";
-                    player.play().catch(e => console.error("Erro ao reproduzir:", e));
+                    reprodutor.play().catch(e => console.error("Erro ao reproduzir:", e));
                 };
                 
                 // Limpa o buffer após uso
-                delete audioBuffers[data.stream_id];
+                delete buffersAudio[dados.id_transmissao];
             }
         });
         

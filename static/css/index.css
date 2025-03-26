@@ -1,0 +1,117 @@
+/* Reset básico */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background: linear-gradient(135deg, #1e3c72, #2a5298);
+    color: white;
+    text-align: center;
+}
+
+h1, h2 {
+    margin-bottom: 20px;
+}
+
+/* Estilo para o container (opcional, apenas para melhor visualização) */
+.file-upload-container {
+    display: flex;
+    align-items: center;
+    margin: 10px;
+    height: 40px; /* Define uma altura fixa para o container (opcional) */
+}
+
+/* Ajusta o input de arquivo */
+input[type="file"] {
+    height: 40px; /* Altura fixa para igualar ao botão */
+    padding: 6px 12px;
+    border: 2px solid #ccc;
+    border-radius: 5px 0 0 5px;
+    background: #fff;
+    color: #333;
+    width: auto;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 16px; /* Garante que a fonte seja igual ao botão */
+}
+
+/* Ajusta o botão para ter a mesma altura */
+.send-button {
+    height: 40px; /* Mesma altura do input */
+    padding: 0 15px; /* Ajuste horizontal apenas */
+    background: #ff6b6b;
+    color: white;
+    border: none;
+    border-radius: 0 5px 5px 0;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 0.3s;
+    display: flex;
+    align-items: center; /* Centraliza o texto verticalmente */
+    justify-content: center;
+}
+
+.send-button:hover {
+    background: #ff4757;
+}
+
+/* ===== REPRODUTOR DE ÁUDIO MODERNO ===== */
+audio {
+    width: 100%;
+    max-width: 300px;
+    margin: 20px 0;
+    border-radius: 50px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s;
+}
+
+/* Customiza os controles do player */
+audio::-webkit-media-controls-panel {
+    background: linear-gradient(135deg, #1e3c72, #2a5298);
+    border-radius: 50px;
+    padding: 10px;
+}
+
+audio::-webkit-media-controls-play-button,
+audio::-webkit-media-controls-mute-button {
+    background-color: #ff6b6b;
+    border-radius: 50%;
+}
+
+audio::-webkit-media-controls-current-time-display,
+audio::-webkit-media-controls-time-remaining-display {
+    color: white;
+    font-family: Arial, sans-serif;
+}
+
+audio::-webkit-media-controls-timeline {
+    background-color: rgba(255, 255, 255, 0.3);
+    border-radius: 10px;
+    margin: 0 10px;
+}
+
+audio::-webkit-media-controls-volume-slider {
+    background-color: rgba(255, 255, 255, 0.3);
+    border-radius: 10px;
+}
+
+/* Efeito hover para interação */
+audio:hover {
+    transform: scale(1.02);
+}
+
+#status {
+    margin-top: 15px;
+    font-size: 1.1em;
+    font-weight: bold;
+}

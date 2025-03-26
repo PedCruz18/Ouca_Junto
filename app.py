@@ -1,67 +1,89 @@
+# --(IMPORTAÇÕES)----------------------------------------------------
 import eventlet
-eventlet.monkey_patch()
+eventlet.monkey_patch()  # Aplica "monkey patching" para permitir suporte assíncrono com eventlet
+from flask import Flask, render_template, request  # Importa o framework Flask para criação do servidor web
+from flask_socketio import SocketIO, emit  # Permite comunicação em tempo real com WebSockets
+from collections import defaultdict  # Estrutura de dados para armazenar sessões de áudio
 
-from flask import Flask, render_template, request
-from flask_socketio import SocketIO, emit
-from collections import defaultdict
+# ---------------------------------------------------------------------
 
+# Inicializa o aplicativo Flask
 app = Flask(__name__)
-socketio = SocketIO(app, 
-                  ping_timeout=120, 
-                  ping_interval=20, 
-                  async_mode='eventlet',
-                  cors_allowed_origins="*")  # Permite conexões de qualquer origem
 
-# Estrutura para armazenar áudios por sessão
-audio_sessions = defaultdict(dict)
-connected_clients = set()
+# Configuração do SocketIO para comunicação em tempo real
+socketio = SocketIO(app, timeout_de_ping=120, intervalo_de_ping=20, modo_assíncrono='eventlet', origens_permitidas="*")  
+# timeout_de_ping: Tempo máximo de espera por resposta antes de desconectar
+# intervalo_de_ping: Intervalo entre pings para manter a conexão ativa
+# modo_assíncrono='eventlet': Usa eventlet para suporte assíncrono
+# origens_permitidas="*": Permite conexões de qualquer origem (CORS liberado)
 
+# ---------------------------------------------------------------------
+
+# Estruturas de dados para armazenar sessões de áudio e clientes conectados
+sessoes_audio = defaultdict(dict)  # Dicionário que armazena áudios por sessão
+clientes_conectados = set()  # Conjunto para armazenar clientes conectados
+
+# ---------------------------------------------------------------------
+
+# Rotas 
 @app.route('/')
 def index():
+    """Rota principal que renderiza a página HTML."""
     return render_template('index.html')
 
+# ---------------------------------------------------------------------
+
+# Eventos de WebSocket
+
 @socketio.on('connect')
-def handle_connect():
-    connected_clients.add(request.sid)
-    print(f'Cliente conectado: {request.sid} - Total: {len(connected_clients)}')
+def ao_conectar():
+    """Evento disparado quando um cliente se conecta."""
+    clientes_conectados.add(request.sid)  # Adiciona o cliente à lista de conectados
+    print(f'Cliente conectado: {request.sid} - Total: {len(clientes_conectados)}')
 
 @socketio.on('disconnect')
-def handle_disconnect():
-    connected_clients.discard(request.sid)
-    if request.sid in audio_sessions:
-        del audio_sessions[request.sid]
-    print(f'Cliente desconectado: {request.sid} - Restantes: {len(connected_clients)}')
+def ao_desconectar():
+    """Evento disparado quando um cliente se desconecta."""
+    clientes_conectados.discard(request.sid)  # Remove o cliente da lista de conectados
+    if request.sid in sessoes_audio:
+        del sessoes_audio[request.sid]  # Remove a sessão de áudio associada ao cliente
+    print(f'Cliente desconectado: {request.sid} - Restantes: {len(clientes_conectados)}')
 
 @socketio.on('audio_metadata')
-def handle_metadata(data):
-    session_id = request.sid
-    audio_sessions[session_id] = {
-        'chunks': [None] * data['totalChunks'],
-        'type': data['type'],
-        'total_chunks': data['totalChunks'],
-        'stream_id': f"stream_{session_id}_{int(time.time())}"  # ID único para a transmissão
+def ao_receber_metadados(dados):
+    """Recebe metadados do áudio e inicializa a sessão do cliente."""
+    id_sessao = request.sid
+    sessoes_audio[id_sessao] = {
+        'pedaços': [None] * dados['totalChunks'],  # Lista para armazenar os pedaços de áudio
+        'tipo': dados['type'],  # Tipo do áudio (exemplo: "mp3", "wav")
+        'total_pedaços': dados['totalChunks'],  # Total de partes do áudio
+        'id_transmissao': f"stream_{id_sessao}_{int(time.time())}"  # Gera um ID único para a transmissão
     }
-    emit('metadata_received', {'status': 'ready'})
+    emit('metadata_received', {'status': 'ready'})  # Notifica que os metadados foram recebidos
 
 @socketio.on('audio_chunk')
-def handle_audio_chunk(data):
-    session_id = request.sid
-    if session_id not in audio_sessions:
-        emit('error', {'message': 'Sessão não inicializada'})
+def ao_receber_pedaco_audio(dados):
+    """Recebe e processa pedaços de áudio enviados pelo cliente."""
+    id_sessao = request.sid
+    if id_sessao not in sessoes_audio:
+        emit('error', {'message': 'Sessão não inicializada'})  # Retorna erro caso a sessão não tenha sido iniciada
         return
     
-    # Armazena o chunk
-    audio_sessions[session_id]['chunks'][data['chunkId']] = data['data']
+    # Armazena o pedaço de áudio na posição correta
+    sessoes_audio[id_sessao]['pedaços'][dados['chunkId']] = dados['data']
     
-    # Envia para TODOS os clientes conectados (broadcast=True)
+    # Envia o pedaço de áudio processado para todos os clientes conectados (broadcast=True)
     emit('audio_processed', {
-        'stream_id': audio_sessions[session_id]['stream_id'],
-        'chunkId': data['chunkId'],
-        'data': data['data'],
-        'total_chunks': audio_sessions[session_id]['total_chunks']
-    }, broadcast=True)  # Esta é a linha crucial que estava faltando
+        'id_transmissao': sessoes_audio[id_sessao]['id_transmissao'],  # ID da transmissão
+        'id_pedaco': dados['chunkId'],  # Número do pedaço de áudio
+        'dados': dados['data'],  # Dados do áudio
+        'total_pedaços': sessoes_audio[id_sessao]['total_pedaços']  # Total de pedaços
+    }, broadcast=True)  # Transmite para todos os clientes conectados
 
+# -----------------------------------------------------------------
+
+# Executor do servidor
 if __name__ == '__main__':
-    import time  # Import para gerar stream_id
+    import time  # Import necessário para gerar id_transmissao
     print("Iniciando servidor...")
-    socketio.run(app, host='0.0.0.0', port=5000, debug=True)
+    socketio.run(app, host='0.0.0.0', port=5000, debug=True)  # Inicia o servidor na porta 5000
