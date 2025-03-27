@@ -137,4 +137,4 @@ def handle_player_control(data):
 if __name__ == '__main__':
     import time  # Import necessário para gerar id_transmissao
     print("Iniciando servidor...")
-    socketio.run(app, host='192.168.1.32', port=5000, debug=True)  # Inicia o servidor na porta 5000
+    socketio.run(app, host='192.168.1.2', port=5000, debug=True)  # Inicia o servidor na porta 5000
