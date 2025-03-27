@@ -19,7 +19,13 @@
     <p id="status">Status: Aguardando...</p>
 
     <script>
-        const socket = io('https://ouca-junto.onrender.com');
+        const socket = io("https://ouca-junto.onrender.com", {
+            transports: ["websocket"],  // Evita polling
+            reconnection: true,
+            reconnectionAttempts: 5,
+            reconnectionDelay: 2000
+        });
+
         const buffersAudio = {};  // Armazena buffers por id_transmissao
         
         // Variáveis para controle colaborativo

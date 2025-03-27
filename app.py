@@ -7,6 +7,7 @@ import time
 
 # Inicializa o aplicativo Flask
 app = Flask(__name__)
+app.config['SECRET_KEY'] = 'minha-chave-secreta'
 
 # Configuração do SocketIO
 socketio = SocketIO(app, ping_timeout=120, ping_interval=20, async_mode='eventlet', cors_allowed_origins="*")
