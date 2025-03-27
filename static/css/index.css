@@ -135,6 +135,7 @@ body {
     border-radius: 10px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
     max-height: 0;
+    max-width: 70%;
     overflow: hidden;
     transition: max-height 0.5s ease-in-out, padding 0.3s ease-in-out;
     left: 50%;
@@ -276,11 +277,14 @@ footer {
     }
 
     .menu-aberto {
-        max-height: 120px;
-        max-width: 100%;
+        max-width: 90%;
         padding: 15px;
     }
     
+    .menu-container{
+        max-width: 90%;
+
+    }
 
     .file-upload-container {
         flex-direction: column;
