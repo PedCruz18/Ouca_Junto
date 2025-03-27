@@ -1,3 +1,4 @@
+# (IMPORTS)---------------------------------------------------------
 import eventlet
 eventlet.monkey_patch()
 from flask import Flask, render_template, request
@@ -6,15 +7,21 @@ from collections import defaultdict
 import time
 from flask_cors import CORS
 import os
+#-------------------------------------------------------------------
+
+# (Inicialização de Recursos)---------------------------------------
 
 # Inicializa o aplicativo Flask
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'minha-chave-secreta'
 
 # Configuração do SocketIO
-CORS(app)  # Permitir CORS em toda a API
+CORS(app)
 
-# Detecta se está rodando em produção ou local
+#-------------------------------------------------------------------
+
+# (Detecta se está rodando em produção ou local)-------------------------------------------------------------------
+
 if os.getenv("RENDER") == "true":
     socketio = SocketIO(app, ping_timeout=120, ping_interval=20, async_mode='eventlet', cors_allowed_origins="*")
     HOST = "0.0.0.0"  # Para produção, use "0.0.0.0"
@@ -26,15 +33,23 @@ else:
     PORT = 5000  # Porta local
     DEBUG_MODE = True  # Ativa o debug em modo desenvolvimento
 
-# Estruturas de dados para armazenar sessões de áudio e clientes conectados
-sessoes_audio = defaultdict(dict)
-clientes_conectados = set()
-sessoes_prontas = defaultdict(set)
+#------------------------------------------------------------------------------------------------------------------
+
+# (Rotas e Interfaces)--------------------
 
 # Rota principal
 @app.route('/')
 def index():
     return render_template('index.html')
+
+#-----------------------------------------
+
+# (Sockets-io e conexões)-----------------------------------------------------
+
+# Estruturas de dados para armazenar sessões de áudio e clientes conectados
+sessoes_audio = defaultdict(dict)
+clientes_conectados = set()
+sessoes_prontas = defaultdict(set)
 
 # Eventos de WebSocket
 @socketio.on('connect')
@@ -113,6 +128,8 @@ def handle_player_control(data):
         
     except Exception as e:
         print(f'Erro no handler de controle: {str(e)}')
+
+#----------------------------------------------------------------------------
 
 # Executor do servidor
 if __name__ == '__main__':

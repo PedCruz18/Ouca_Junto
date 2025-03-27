@@ -227,25 +227,6 @@
             
             console.log(`Enviando ${action} @ ${audioPlayer.currentTime}s`);
         }
-
-        // Função para enviar a mensagem
-        function enviarMensagem() {
-            var mensagem = document.getElementById('chat-input').value;
-            if (mensagem) {
-                socket.emit('enviar_mensagem', mensagem);  // Envia para o servidor
-                document.getElementById('chat-input').value = '';  // Limpa o campo de entrada
-            }
-        }
-
-        // Ouvir por mensagens recebidas do servidor
-        socket.on('mensagem_recebida', function(data) {
-            var chatBox = document.getElementById('chat-box');
-            var novaMensagem = document.createElement('p');
-            novaMensagem.textContent = data.mensagem;
-            chatBox.appendChild(novaMensagem);
-            chatBox.scrollTop = chatBox.scrollHeight;  // Faz a rolagem automática para a última mensagem
-        });
-
     
         // Configura listeners de eventos
         audioPlayer.addEventListener('play', () => sendControl('play'));
