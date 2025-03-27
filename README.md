@@ -21,6 +21,17 @@
 
 A música tem o poder de conectar as pessoas de maneiras especiais. Quando compartilhamos uma canção, seja ela uma lembrança ou uma nova descoberta, criamos momentos inesquecíveis. **Ouça Junto** é uma forma de levar esse sentimento de união, mesmo à distância, e compartilhar a magia da música com quem importa. 🎤🌍
 
+## Como Funciona 🚀
+
+O funcionamento do **Ouça Junto** é simples e envolvente. Quando você acessa o site, ele permite que **várias pessoas se conectem simultaneamente** para ouvir um áudio local de forma sincronizada. Aqui está o processo:
+
+1. **Conexão de Usuários**: Quando você entra no site, você e seus amigos se conectam ao servidor via Socket.IO.
+2. **Envio do Áudio**: O proprietário do áudio seleciona o arquivo de música desejado (ou transmite via URL) e o áudio é carregado.
+3. **Sincronização Automática**: Todos os usuários conectados começam a ouvir o áudio ao mesmo tempo. O fluxo de áudio é enviado para todos os navegadores de maneira sincronizada.
+4. **Controle de Reproduções**: O controle de play/pause e o tempo da música são mantidos em sincronia entre os participantes. Isso significa que se alguém pausar ou mudar o áudio, todos os outros ouvem a mesma coisa exatamente no mesmo momento.
+
+O uso de **Socket.IO** assegura que os eventos de reprodução sejam emitidos de forma em tempo real para todos os usuários, permitindo uma experiência sem interrupções e perfeitamente sincronizada. 🌟
+
 ## Instalação ⚙️
 
 Para rodar o projeto localmente, siga as instruções abaixo:
