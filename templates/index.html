@@ -19,8 +19,14 @@
     <p id="status">Status: Aguardando...</p>
 
     <script>
-        const socket = io("https://ouca-junto.onrender.com", {
-            transports: ["websocket"],  // Evita polling
+        const isProduction = window.location.hostname !== "localhost";
+        const SERVER_URL = isProduction 
+            ? "https://ouca-junto.onrender.com"  // URL de produção
+            : "http://192.168.1.2:5000";  // URL local
+
+        const socket = io(SERVER_URL, {
+            transports: ["websocket"],
+            secure: isProduction,
             reconnection: true,
             reconnectionAttempts: 5,
             reconnectionDelay: 2000

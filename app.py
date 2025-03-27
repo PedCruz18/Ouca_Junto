@@ -13,7 +13,18 @@ app.config['SECRET_KEY'] = 'minha-chave-secreta'
 
 # Configuração do SocketIO
 CORS(app)  # Permitir CORS em toda a API
-socketio = SocketIO(app, ping_timeout=120, ping_interval=20, async_mode='eventlet', cors_allowed_origins="*")
+
+# Detecta se está rodando em produção ou local
+if os.getenv("RENDER") == "true":
+    socketio = SocketIO(app, ping_timeout=120, ping_interval=20, async_mode='eventlet', cors_allowed_origins="*")
+    HOST = "0.0.0.0"  # Para produção, use "0.0.0.0"
+    PORT = int(os.environ.get("PORT", 10000))  # Usa a porta definida pelo Render
+    DEBUG_MODE = False  # Desativa o debug em produção
+else:
+    socketio = SocketIO(app, ping_timeout=120, ping_interval=20, async_mode='eventlet', cors_allowed_origins="*")
+    HOST = "192.168.1.2"  # Para desenvolvimento, use "127.0.0.1"
+    PORT = 5000  # Porta local
+    DEBUG_MODE = True  # Ativa o debug em modo desenvolvimento
 
 # Estruturas de dados para armazenar sessões de áudio e clientes conectados
 sessoes_audio = defaultdict(dict)
@@ -103,8 +114,7 @@ def handle_player_control(data):
     except Exception as e:
         print(f'Erro no handler de controle: {str(e)}')
 
+# Executor do servidor
 if __name__ == '__main__':
-    print("Iniciando servidor...")
-
-    PORT = int(os.environ.get("PORT", 10000))  # Usa a porta definida pelo Render
-    socketio.run(app, host="0.0.0.0", port=PORT, debug=True)
+    print(f"Iniciando servidor em modo {'produção' if not DEBUG_MODE else 'desenvolvimento'}...")
+    socketio.run(app, host=HOST, port=PORT, debug=DEBUG_MODE)
