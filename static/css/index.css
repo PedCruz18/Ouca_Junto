@@ -107,8 +107,8 @@ body {
 
 /* Botão para expandir/recolher */
 .toggle-menu {
-    background: #00a2ff;
-    color: white;
+    background: #ffffff;
+    color: black;
     border: none;
     padding: 10px 15px;
     font-size: 18px;
@@ -121,7 +121,7 @@ body {
     justify-content: center;
     gap: 8px;
     position: relative;
-    top: 0px; 
+
     left: 50%;
     transform: translateX(-50%); 
 }
