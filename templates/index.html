@@ -1,24 +1,61 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Transmissão de Áudio</title>
+    <title>OuçaJunto.</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.0.0/dist/socket.io.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="static/css/index.css">
 </head>
 <body>
-    <h1>Transmissão de Áudio</h1>
-    <div class="file-upload-container">
-        <input type="file" id="arquivoAudio" accept="audio/*" class="file-input">
-        <button onclick="enviarAudio()" class="send-button">
-            <i class="fas fa-paper-plane"></i>
+    <!-- Navbar Responsiva -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <a href="#" class="navbar-brand">OuçaJunto<span class="brand-dot">.</span></a>
+            <div class="navbar-toggle" id="mobile-menu">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+            <ul class="navbar-menu">
+                <li class="navbar-item"><a href="#"><i class="fas fa-home"></i> Início</a></li>
+                <li class="navbar-item"><a href="#"><i class="fas fa-music"></i> Músicas</a></li>
+                <li class="navbar-item"><a href="#"><i class="fas fa-users"></i> Grupos</a></li>
+                <li class="navbar-item"><a href="#"><i class="fas fa-cog"></i> Configurações</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <h1>Transmissão</h1>
+
+        <audio id="reprodutorAudio" controls></audio>
+
+        <!-- Botão para abrir/fechar o menu suspenso -->
+        <button class="toggle-menu" onclick="toggleMenu()">
+            <i class="fas fa-chevron-down"></i> <!-- Ícone da seta -->
         </button>
-    </div>
-    <audio id="reprodutorAudio" controls></audio>
     
-    <p id="status">Status: Aguardando...</p>
+        <!-- Menu suspenso (inicia recolhido) -->
+        <div class="menu-container" id="uploadMenu">
+            <div class="file-upload-container">
+                <input type="file" id="arquivoAudio" accept="audio/*" class="file-input">
+                <button onclick="enviarAudio()" class="send-button">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    
+        <p id="status">Status: Aguardando...</p>
+    </main>
+
+    <!-- Rodapé -->
+    <footer>
+        <p>OuçaJunto v.13 - Todos os direitos reservados</p>
+    </footer>
 
     <script>
+        // Código JavaScript existente permanece o mesmo
         const isProduction = window.location.hostname !== "localhost";
         const SERVER_URL = isProduction 
             ? "https://ouca-junto.onrender.com"  // URL de produção
@@ -41,6 +78,12 @@
         let isPlaying = false;
         const audioPlayer = document.getElementById('reprodutorAudio');
         
+        function toggleMenu() {
+            let menu = document.getElementById("uploadMenu");
+            menu.classList.toggle("menu-aberto");
+        }
+
+
         async function enviarAudio() {
             const entradaArquivo = document.getElementById('arquivoAudio');
             const arquivo = entradaArquivo.files[0];
@@ -185,6 +228,25 @@
             
             console.log(`Enviando ${action} @ ${audioPlayer.currentTime}s`);
         }
+
+        // Função para enviar a mensagem
+        function enviarMensagem() {
+            var mensagem = document.getElementById('chat-input').value;
+            if (mensagem) {
+                socket.emit('enviar_mensagem', mensagem);  // Envia para o servidor
+                document.getElementById('chat-input').value = '';  // Limpa o campo de entrada
+            }
+        }
+
+        // Ouvir por mensagens recebidas do servidor
+        socket.on('mensagem_recebida', function(data) {
+            var chatBox = document.getElementById('chat-box');
+            var novaMensagem = document.createElement('p');
+            novaMensagem.textContent = data.mensagem;
+            chatBox.appendChild(novaMensagem);
+            chatBox.scrollTop = chatBox.scrollHeight;  // Faz a rolagem automática para a última mensagem
+        });
+
     
         // Configura listeners de eventos
         audioPlayer.addEventListener('play', () => sendControl('play'));
@@ -209,6 +271,12 @@
 
         socket.on('reconnect_attempt', (attemptNumber) => {
             document.getElementById('status').innerText = `Tentando reconectar (${attemptNumber})...`;
+        });
+
+        // Menu mobile toggle
+        document.getElementById('mobile-menu').addEventListener('click', function() {
+            this.classList.toggle('active');
+            document.querySelector('.navbar-menu').classList.toggle('active');
         });
 
     </script>
