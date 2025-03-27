@@ -29,7 +29,7 @@ if os.getenv("RENDER") == "true":
     DEBUG_MODE = False  # Desativa o debug em produção
 else:
     socketio = SocketIO(app, ping_timeout=120, ping_interval=20, async_mode='eventlet', cors_allowed_origins="*")
-    HOST = "192.168.1.2"  # Para desenvolvimento, use "127.0.0.1"
+    HOST = "10.160.52.85"  # Para desenvolvimento, use "127.0.0.1"
     PORT = 5000  # Porta local
     DEBUG_MODE = True  # Ativa o debug em modo desenvolvimento
 

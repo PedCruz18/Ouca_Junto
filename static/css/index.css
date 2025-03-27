@@ -103,13 +103,6 @@ body {
     overflow-x: hidden;
 }
 
-/* Títulos */
-h1, h2 {
-    margin-bottom: 20px;
-    font-size: 2em;
-    line-height: 1.2;
-}
-
 /* ===== MENU SUSPENSO ===== */
 
 /* Botão para expandir/recolher */
@@ -127,20 +120,16 @@ h1, h2 {
     align-items: center;
     justify-content: center;
     gap: 8px;
-    position: relative; /* Mantenha como 'relative' para mover junto com o conteúdo */
-    top: 0px; /* Para ajustar verticalmente, se necessário */
-    left: 50%; /* Mover o botão para o meio do contêiner */
-    transform: translateX(-50%); /* Ajusta a posição do botão para que ele fique centralizado */
-}
-
-/* Ícone de seta */
-.toggle-menu i {
-    transition: transform 0.3s ease;
+    position: relative;
+    top: 0px; 
+    left: 50%;
+    transform: translateX(-50%); 
 }
 
 /* Menu suspenso - inicialmente recolhido */
 .menu-container {
     position: relative;
+    top: -50px;
     background: rgba(30, 60, 114, 0.9);
     padding: 0;
     border-radius: 10px;
@@ -148,18 +137,17 @@ h1, h2 {
     max-height: 0;
     overflow: hidden;
     transition: max-height 0.5s ease-in-out, padding 0.3s ease-in-out;
+    left: 50%;
+    transform: translateX(-50%); 
 }
 
 /* Quando o menu está aberto */
 .menu-aberto {
     max-height: 120px;
+    max-width: 70%;
     padding: 15px;
 }
 
-/* Girar a seta ao abrir */
-.menu-aberto ~ .toggle-menu i {
-    transform: rotate(180deg);
-}
 
 /* Ajustando a disposição dos botões */
 .file-upload-container {
@@ -196,50 +184,23 @@ input[type="file"] {
     background: #ff4757;
 }
 
+.minha-imagem {
+    position: relative;
+    max-width: 100%; /* Garante que a imagem não ultrapasse a largura do container */
+    height: auto; /* Mantém a proporção da imagem */
+    display: block; /* Permite centralização com margin */
+    margin: 0 auto; /* Centraliza horizontalmente */
+}
+
 /* ===== REPRODUTOR DE ÁUDIO MODERNO ===== */
 audio {
     width: 100%;
     max-width: 600px;
-    margin: 20px 0;
     border-radius: 50px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
     transition: transform 0.3s;
 }
 
-/* Customiza os controles do player */
-audio::-webkit-media-controls-panel {
-    background: linear-gradient(135deg, #1e3c72, #2a5298);
-    border-radius: 50px;
-    padding: 10px;
-}
-
-audio::-webkit-media-controls-play-button,
-audio::-webkit-media-controls-mute-button {
-    background-color: #ff6b6b;
-    border-radius: 50%;
-}
-
-audio::-webkit-media-controls-current-time-display,
-audio::-webkit-media-controls-time-remaining-display {
-    color: white;
-    font-family: Arial, sans-serif;
-}
-
-audio::-webkit-media-controls-timeline {
-    background-color: rgba(255, 255, 255, 0.3);
-    border-radius: 10px;
-    margin: 0 10px;
-}
-
-audio::-webkit-media-controls-volume-slider {
-    background-color: rgba(255, 255, 255, 0.3);
-    border-radius: 10px;
-}
-
-/* Efeito hover para interação */
-audio:hover {
-    transform: scale(1.02);
-}
 
 /* Status de progresso */
 #status {
@@ -314,6 +275,13 @@ footer {
         overflow: hidden;
     }
 
+    .menu-aberto {
+        max-height: 120px;
+        max-width: 100%;
+        padding: 15px;
+    }
+    
+
     .file-upload-container {
         flex-direction: column;
         max-width: 100%;
@@ -322,6 +290,12 @@ footer {
     input[type="file"], .send-button {
         width: 100%;
         font-size: 18px;
+    }
+
+    /* Adicione estas regras específicas para a imagem */
+    .minha-imagem {
+        width: 90%;
+        object-fit: contain; 
     }
 
     audio {

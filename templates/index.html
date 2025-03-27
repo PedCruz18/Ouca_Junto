@@ -24,9 +24,11 @@
             </ul>
         </div>
     </nav>
-    <main class="main-content">
-        <h1>Transmissão</h1>
 
+    <main class="main-content">
+        <h1>Transmissor</h1>
+
+        <img src="static/img/cassete.png" alt="Descrição da imagem" class="minha-imagem">
         <audio id="reprodutorAudio" controls></audio>
 
         <!-- Botão para abrir/fechar o menu suspenso -->
@@ -49,7 +51,7 @@
 
     <!-- Rodapé -->
     <footer>
-        <p>OuçaJunto v.13 - Todos os direitos reservados</p>
+        <p>OuçaJunto v.14 - Todos os direitos reservados</p>
     </footer>
 
     <script>
@@ -57,7 +59,7 @@
         const isProduction = window.location.hostname !== "localhost";
         const SERVER_URL = isProduction 
             ? "https://ouca-junto.onrender.com"  // URL de produção
-            : "http://192.168.1.2:5000";  // URL local
+            : "http://10.160.52.85:5000";  // URL local
 
         const socket = io(SERVER_URL, {
             transports: ["websocket"],
@@ -76,18 +78,19 @@
         let isPlaying = false;
         const audioPlayer = document.getElementById('reprodutorAudio');
         
+        // Menu cassete
         function toggleMenu() {
             let menu = document.getElementById("uploadMenu");
             menu.classList.toggle("menu-aberto");
         }
 
-
         async function enviarAudio() {
             const entradaArquivo = document.getElementById('arquivoAudio');
             const arquivo = entradaArquivo.files[0];
+            toggleMenu();
             
             if (!arquivo) {
-                alert("Por favor, selecione um arquivo de áudio.");
+                //por enquanto nada
                 return;
             }
             
@@ -99,7 +102,7 @@
                 type: arquivo.type,
                 totalChunks: totalPedaços
             });
-
+        
             for (let i = 0; i < totalPedaços; i++) {
                 const inicio = i * tamanhoPedaco;
                 const fim = Math.min(inicio + tamanhoPedaco, arquivo.size);
@@ -117,8 +120,8 @@
                     };
                 });
             }
-        }
 
+        }
         
         // Recebe pedaços de áudio
         socket.on('audio_processed', function(dados) {
@@ -179,7 +182,6 @@
                 document.getElementById('status').innerText = "Reproduzindo sincronizado!";
             }
         });
-
     
         // Recebe comandos de controle (play/pause)
         socket.on('player_control', function(data) {
@@ -235,7 +237,13 @@
                 sendControl('play');
             }
         });
-    
+
+        // Menu mobile toggle
+        document.getElementById('mobile-menu').addEventListener('click', function() {
+            this.classList.toggle('active');
+            document.querySelector('.navbar-menu').classList.toggle('active');
+        });
+
         // Status da conexão
         socket.on('connect', () => {
             document.getElementById('status').innerText = "Conectado ao servidor";
@@ -251,31 +259,6 @@
         socket.on('reconnect_attempt', (attemptNumber) => {
             document.getElementById('status').innerText = `Tentando reconectar (${attemptNumber})...`;
         });
-
-        // Menu mobile toggle
-        document.getElementById('mobile-menu').addEventListener('click', function() {
-            this.classList.toggle('active');
-            document.querySelector('.navbar-menu').classList.toggle('active');
-        });
-
-        document.addEventListener("DOMContentLoaded", function () {
-            const chatContainer = document.getElementById("chat-container");
-            const chatToggle = document.getElementById("chat-toggle");
-            const closeChat = document.getElementById("close-chat");
-
-            // Versão curta com verificação básica
-            if (chatContainer && chatToggle && closeChat) {
-                chatToggle.addEventListener("click", (e) => {
-                    e.preventDefault();
-                    chatContainer.classList.toggle("hidden");
-                });
-                
-                closeChat.addEventListener("click", () => {
-                    chatContainer.classList.add("hidden");
-                });
-            }
-        });
-
     </script>
 </body>
 </html>
