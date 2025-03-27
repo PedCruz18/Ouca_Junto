@@ -29,7 +29,7 @@
         let isPlaying = false;
         const audioPlayer = document.getElementById('reprodutorAudio');
         
-        function enviarAudio() {
+        async function enviarAudio() {
             const entradaArquivo = document.getElementById('arquivoAudio');
             const arquivo = entradaArquivo.files[0];
             
@@ -39,32 +39,33 @@
             }
             
             document.getElementById('status').innerText = "Preparando envio...";
-            
-            const tamanhoPedaco = 1024 * 512;  // 512KB
+            const tamanhoPedaco = 1024 * 512;
             const totalPedaços = Math.ceil(arquivo.size / tamanhoPedaco);
             
-            // Envia metadados primeiro
             socket.emit('audio_metadata', {
                 type: arquivo.type,
                 totalChunks: totalPedaços
             });
-            
-            // Envia os pedaços
+
             for (let i = 0; i < totalPedaços; i++) {
                 const inicio = i * tamanhoPedaco;
                 const fim = Math.min(inicio + tamanhoPedaco, arquivo.size);
                 const pedaco = arquivo.slice(inicio, fim);
                 
                 const leitor = new FileReader();
-                leitor.onload = function(e) {
-                    socket.emit('audio_chunk', {
-                        chunkId: i,
-                        data: e.target.result
-                    });
-                };
                 leitor.readAsArrayBuffer(pedaco);
+                await new Promise(resolve => {
+                    leitor.onload = function(e) {
+                        socket.emit('audio_chunk', {
+                            chunkId: i,
+                            data: e.target.result
+                        });
+                        resolve();
+                    };
+                });
             }
         }
+
         
         // Recebe pedaços de áudio
         socket.on('audio_processed', function(dados) {
@@ -105,18 +106,27 @@
             }
         });
     
-        // Recebe comando para iniciar reprodução sincronizada
+        async function tentarReproducao() {
+            try {
+                await audioPlayer.play();
+            } catch (e) {
+                console.log("Reprodução bloqueada, aguardando interação.");
+                document.getElementById('status').innerText = "Toque para iniciar a reprodução";
+                document.body.addEventListener('click', () => {
+                    audioPlayer.play();
+                }, { once: true });
+            }
+        }
+
         socket.on('iniciar_reproducao', function(data) {
             if (data.id_transmissao === currentStreamId) {
                 isPlaying = true;
                 audioPlayer.currentTime = 0;
-                audioPlayer.play().catch(e => {
-                    console.error("Erro ao reproduzir:", e);
-                    document.getElementById('status').innerText = "Erro ao iniciar reprodução";
-                });
+                tentarReproducao();
                 document.getElementById('status').innerText = "Reproduzindo sincronizado!";
             }
         });
+
     
         // Recebe comandos de controle (play/pause)
         socket.on('player_control', function(data) {
@@ -176,11 +186,19 @@
         // Status da conexão
         socket.on('connect', () => {
             document.getElementById('status').innerText = "Conectado ao servidor";
+            if (currentStreamId) {
+                socket.emit('cliente_pronto', { id_transmissao: currentStreamId });
+            }
         });
-        
+
         socket.on('disconnect', () => {
-            document.getElementById('status').innerText = "Desconectado do servidor";
+            document.getElementById('status').innerText = "Desconectado do servidor. Tentando reconectar...";
         });
+
+        socket.on('reconnect_attempt', (attemptNumber) => {
+            document.getElementById('status').innerText = `Tentando reconectar (${attemptNumber})...`;
+        });
+
     </script>
 </body>
 </html>
