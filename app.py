@@ -5,6 +5,7 @@ from flask_socketio import SocketIO, emit
 from collections import defaultdict
 import time
 from flask_cors import CORS
+import os
 
 # Inicializa o aplicativo Flask
 app = Flask(__name__)
