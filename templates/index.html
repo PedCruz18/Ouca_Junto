@@ -19,8 +19,15 @@
     <p id="status">Status: Aguardando...</p>
 
     <script>
-        const socket = io('http://192.168.1.2:5000');
+        const socket = io('http://192.168.1.32:5000');
         const buffersAudio = {};  // Armazena buffers por id_transmissao
+        
+        // Variáveis para controle colaborativo
+        let currentStreamId = null;
+        let isSyncing = false;
+        let isReady = false;
+        let isPlaying = false;
+        const audioPlayer = document.getElementById('reprodutorAudio');
         
         function enviarAudio() {
             const entradaArquivo = document.getElementById('arquivoAudio');
@@ -61,6 +68,7 @@
         
         // Recebe pedaços de áudio
         socket.on('audio_processed', function(dados) {
+            currentStreamId = dados.id_transmissao; // Atualiza o ID da transmissão atual
             document.getElementById('status').innerText = 
                 `Recebendo pedaço ${dados.id_pedaco + 1} de ${dados.total_pedaços}`;
             
@@ -83,18 +91,89 @@
                 const blobAudio = new Blob(pedaços, { type: 'audio/*' });
                 const urlAudio = URL.createObjectURL(blobAudio);
                 
-                const reprodutor = document.getElementById('reprodutorAudio');
-                reprodutor.src = urlAudio;
-                reprodutor.onloadedmetadata = () => {
-                    document.getElementById('status').innerText = "Áudio pronto para reprodução!";
-                    reprodutor.play().catch(e => console.error("Erro ao reproduzir:", e));
+                audioPlayer.src = urlAudio;
+                audioPlayer.onloadedmetadata = () => {
+                    document.getElementById('status').innerText = "Áudio pronto - aguardando sincronização...";
+                    // Notifica o servidor que está pronto para reproduzir
+                    socket.emit('cliente_pronto', {
+                        id_transmissao: currentStreamId
+                    });
                 };
                 
                 // Limpa o buffer após uso
                 delete buffersAudio[dados.id_transmissao];
             }
         });
-        
+    
+        // Recebe comando para iniciar reprodução sincronizada
+        socket.on('iniciar_reproducao', function(data) {
+            if (data.id_transmissao === currentStreamId) {
+                isPlaying = true;
+                audioPlayer.currentTime = 0;
+                audioPlayer.play().catch(e => {
+                    console.error("Erro ao reproduzir:", e);
+                    document.getElementById('status').innerText = "Erro ao iniciar reprodução";
+                });
+                document.getElementById('status').innerText = "Reproduzindo sincronizado!";
+            }
+        });
+    
+        // Recebe comandos de controle (play/pause)
+        socket.on('player_control', function(data) {
+            try {
+                if (!data || !data.action || data.id_transmissao !== currentStreamId) {
+                    return;
+                }
+    
+                // Se for um comando de play e não estivermos reproduzindo ainda
+                if (data.action === 'play' && !isPlaying) {
+                    return; // Ignora, pois a reprodução será iniciada pelo 'iniciar_reproducao'
+                }
+    
+                console.log(`Recebido ${data.action} @ ${data.currentTime}s`);
+                
+                isSyncing = true;
+                audioPlayer.currentTime = data.currentTime || 0;
+                
+                if (data.action === 'play' && isPlaying) {
+                    audioPlayer.play().catch(e => console.error("Autoplay bloqueado:", e));
+                } else {
+                    audioPlayer.pause();
+                }
+                
+                document.getElementById('status').innerText = 
+                    `Controle: ${data.action} @ ${data.currentTime.toFixed(2)}s`;
+                
+            } catch (e) {
+                console.error("Erro no handler de controle:", e);
+            } finally {
+                setTimeout(() => isSyncing = false, 100);
+            }
+        });
+    
+        // Envia comandos quando usuário interage
+        function sendControl(action) {
+            if (isSyncing || !currentStreamId || !isPlaying) return;
+            
+            socket.emit('player_control', {
+                action: action,
+                currentTime: audioPlayer.currentTime,
+                id_transmissao: currentStreamId
+            });
+            
+            console.log(`Enviando ${action} @ ${audioPlayer.currentTime}s`);
+        }
+    
+        // Configura listeners de eventos
+        audioPlayer.addEventListener('play', () => sendControl('play'));
+        audioPlayer.addEventListener('pause', () => sendControl('pause'));
+        audioPlayer.addEventListener('seeked', () => {
+            if (!audioPlayer.paused) {
+                sendControl('play');
+            }
+        });
+    
+        // Status da conexão
         socket.on('connect', () => {
             document.getElementById('status').innerText = "Conectado ao servidor";
         });

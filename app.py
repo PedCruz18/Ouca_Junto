@@ -80,10 +80,61 @@ def ao_receber_pedaco_audio(dados):
         'total_pedaços': sessoes_audio[id_sessao]['total_pedaços']  # Total de pedaços
     }, broadcast=True)  # Transmite para todos os clientes conectados
 
+from collections import defaultdict
+import time
+
+# Adicione estas variáveis globais
+clientes_prontos = set()
+sessoes_prontas = defaultdict(set)
+
+@socketio.on('cliente_pronto')
+def handle_cliente_pronto(data):
+    id_sessao = request.sid
+    id_transmissao = data.get('id_transmissao')
+    
+    if not id_transmissao:
+        return
+    
+    # Adiciona à lista de prontos
+    sessoes_prontas[id_transmissao].add(id_sessao)
+    print(f"Cliente {id_sessao} pronto para {id_transmissao}")
+    
+    # Verifica se todos nesta sessão de áudio estão prontos
+    clientes_na_transmissao = [sid for sid in sessoes_audio 
+                             if sessoes_audio[sid]['id_transmissao'] == id_transmissao]
+    
+    if len(sessoes_prontas[id_transmissao]) >= len(clientes_na_transmissao) and clientes_na_transmissao:
+        print(f"Todos prontos para {id_transmissao} - Iniciando reprodução")
+        emit('iniciar_reproducao', {
+            'id_transmissao': id_transmissao,
+            'timestamp': time.time()
+        }, broadcast=True)
+        # Limpa a lista para esta transmissão
+        sessoes_prontas.pop(id_transmissao, None)
+
+@socketio.on('player_control')
+def handle_player_control(data):
+    """Recebe comandos de controle do player e transmite para todos"""
+    try:
+        id_sessao = request.sid
+        id_transmissao = data.get('id_transmissao')
+        
+        if not id_transmissao or id_transmissao not in [sessao['id_transmissao'] 
+                                                      for sessao in sessoes_audio.values()]:
+            return
+            
+        emit('player_control', {
+            'action': data['action'],
+            'currentTime': data.get('currentTime', 0),
+            'id_transmissao': id_transmissao
+        }, broadcast=True)
+        
+    except Exception as e:
+        print(f'Erro no handler de controle: {str(e)}')
 # -----------------------------------------------------------------
 
 # Executor do servidor
 if __name__ == '__main__':
     import time  # Import necessário para gerar id_transmissao
     print("Iniciando servidor...")
-    socketio.run(app, host='0.0.0.0', port=5000, debug=True)  # Inicia o servidor na porta 5000
+    socketio.run(app, host='192.168.1.32', port=5000, debug=True)  # Inicia o servidor na porta 5000
