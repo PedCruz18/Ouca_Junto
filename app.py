@@ -4,12 +4,14 @@ from flask import Flask, render_template, request
 from flask_socketio import SocketIO, emit
 from collections import defaultdict
 import time
+from flask_cors import CORS
 
 # Inicializa o aplicativo Flask
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'minha-chave-secreta'
 
 # Configuração do SocketIO
+CORS(app)  # Permitir CORS em toda a API
 socketio = SocketIO(app, ping_timeout=120, ping_interval=20, async_mode='eventlet', cors_allowed_origins="*")
 
 # Estruturas de dados para armazenar sessões de áudio e clientes conectados
@@ -100,7 +102,8 @@ def handle_player_control(data):
     except Exception as e:
         print(f'Erro no handler de controle: {str(e)}')
 
-# Executor do servidor
 if __name__ == '__main__':
     print("Iniciando servidor...")
-    socketio.run(app, host='https://ouca-junto.onrender.com', port=5000, debug=True)
+
+    PORT = int(os.environ.get("PORT", 10000))  # Usa a porta definida pelo Render
+    socketio.run(app, host="0.0.0.0", port=PORT, debug=True)
