@@ -18,13 +18,12 @@
                 <span class="bar"></span>
             </div>
             <ul class="navbar-menu">
-                <li class="navbar-item"><a href="#"><i class="fas fa-comments"></i> Bate-Papo</a></li>
-                <li class="navbar-item"><a href="#"><i class="fas fa-users"></i> Grupos</a></li>
+                <li class="navbar-item"><a href="#" id="chat-toggle"><i class="fas fa-comments"></i> Bate-Papo</a></li>
+                <li class="navbar-item"><a href="#"><i class="fas fa-users"></i> Ouvintes</a></li>
                 <li class="navbar-item"><a href="#"><i class="fas fa-cog"></i> Configurações</a></li>
             </ul>
         </div>
     </nav>
-
     <main class="main-content">
         <h1>Transmissão</h1>
 
@@ -257,6 +256,24 @@
         document.getElementById('mobile-menu').addEventListener('click', function() {
             this.classList.toggle('active');
             document.querySelector('.navbar-menu').classList.toggle('active');
+        });
+
+        document.addEventListener("DOMContentLoaded", function () {
+            const chatContainer = document.getElementById("chat-container");
+            const chatToggle = document.getElementById("chat-toggle");
+            const closeChat = document.getElementById("close-chat");
+
+            // Versão curta com verificação básica
+            if (chatContainer && chatToggle && closeChat) {
+                chatToggle.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    chatContainer.classList.toggle("hidden");
+                });
+                
+                closeChat.addEventListener("click", () => {
+                    chatContainer.classList.add("hidden");
+                });
+            }
         });
 
     </script>

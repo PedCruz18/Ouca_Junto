@@ -261,6 +261,100 @@ footer {
     font-family: Arial, sans-serif;
     box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.2);
 }
+/* Estilos do bate-papo */
+#chat-container {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    width: 300px;
+    height: 400px;
+    background-color: #2c3e50;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    z-index: 1000;
+    transition: all 0.3s ease;
+}
+
+#chat-container.hidden {
+    transform: translateY(calc(100% + 20px));
+}
+
+.chat-header {
+    padding: 15px;
+    background-color: #1a252f;
+    color: white;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.chat-header h2 {
+    margin: 0;
+    font-size: 1.2rem;
+}
+
+#close-chat {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+.chat-messages {
+    flex: 1;
+    padding: 15px;
+    overflow-y: auto;
+    background-color: #34495e;
+}
+
+.chat-message {
+    background-color: #2c3e50;
+    color: white;
+    padding: 8px 12px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    max-width: 80%;
+    word-wrap: break-word;
+}
+
+.chat-message.own-message {
+    background-color: #3498db;
+    margin-left: auto;
+}
+
+.chat-footer {
+    padding: 10px;
+    background-color: #1a252f;
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+    display: flex;
+}
+
+#chat-input {
+    flex: 1;
+    padding: 8px;
+    border: none;
+    border-radius: 5px;
+    margin-right: 10px;
+}
+
+#send-chat {
+    padding: 8px 15px;
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+#send-chat:hover {
+    background-color: #2980b9;
+}
 
 /* Design Responsivo */
 @media (max-width: 600px) {
@@ -314,6 +408,44 @@ footer {
     body {
         overflow: hidden;
     }
+
+
+/* ===== CHAT RESPONSIVO ===== */
+    #chat-container {
+        position: fixed;
+        top: 80px; /* Abaixo do navbar */
+        left: 0;
+        right: 0;
+        bottom: 60px; /* Acima do footer */
+        width: 100%;
+        max-width: 100%;
+        height: auto;
+        transform: none;
+    }
+
+    .chat-body {
+        padding-bottom: 70px; /* Espaço para o input */
+        height: calc(100% - 120px); /* Ajuste para header e footer */
+    }
+
+    .chat-footer {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: white;
+        padding: 10px 15px;
+        border-top: 1px solid #ddd;
+    }
+
+    .chat-footer input {
+        padding: 12px;
+    }
+
+    .chat-footer button {
+        padding: 12px 20px;
+    }
+
 
     .file-upload-container {
         flex-direction: column;
