@@ -102,4 +102,4 @@ def handle_player_control(data):
 # Executor do servidor
 if __name__ == '__main__':
     print("Iniciando servidor...")
-    socketio.run(app, host='192.168.1.2', port=5000, debug=True)
+    socketio.run(app, host='https://ouca-junto.onrender.com', port=5000, debug=True)
