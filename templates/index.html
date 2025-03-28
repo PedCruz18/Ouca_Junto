@@ -8,7 +8,8 @@
     <link rel="stylesheet" href="static/css/index.css">
 </head>
 <body>
-    <!-- Navbar Responsiva -->
+
+    <!-- Navbar -------->
     <nav class="navbar">
         <div class="navbar-container">
             <a href="#" class="navbar-brand">OuçaJunto<span class="brand-dot">.</span></a>
@@ -25,6 +26,7 @@
         </div>
     </nav>
 
+    <!-- Conteúdo Central -------->
     <main class="main-content">
         <h1>Transmissor</h1>
 
@@ -51,216 +53,15 @@
 
     <!-- Rodapé -->
     <footer>
-        <p>OuçaJunto v.14 - Todos os direitos reservados</p>
+        <p>OuçaJunto v.15 - Todos os direitos reservados</p>
     </footer>
 
-    <script>
-        // Código JavaScript existente permanece o mesmo
-        const isProduction = window.location.hostname !== "localhost";
-        const SERVER_URL = isProduction 
-            ? "https://ouca-junto.onrender.com"  // URL de produção
-            : "http://10.160.52.85:5000";  // URL local
+    <!-- Scritp do sistema de audio -->
+    <script type="module" src="static/js/SistemaAudio.js" defer></script>
 
-        const socket = io(SERVER_URL, {
-            transports: ["websocket"],
-            secure: isProduction,
-            reconnection: true,
-            reconnectionAttempts: 5,
-            reconnectionDelay: 2000
-        });
+    <!-- Script de interfaces -->
+    <script type="module" src="static/js/Interfaces.js" defer></script>
 
-        const buffersAudio = {};  // Armazena buffers por id_transmissao
-        
-        // Variáveis para controle colaborativo
-        let currentStreamId = null;
-        let isSyncing = false;
-        let isReady = false;
-        let isPlaying = false;
-        const audioPlayer = document.getElementById('reprodutorAudio');
-        
-        // Menu cassete
-        function toggleMenu() {
-            let menu = document.getElementById("uploadMenu");
-            menu.classList.toggle("menu-aberto");
-        }
 
-        async function enviarAudio() {
-            const entradaArquivo = document.getElementById('arquivoAudio');
-            const arquivo = entradaArquivo.files[0];
-            toggleMenu();
-            
-            if (!arquivo) {
-                //por enquanto nada
-                return;
-            }
-            
-            document.getElementById('status').innerText = "Preparando envio...";
-            const tamanhoPedaco = 1024 * 512;
-            const totalPedaços = Math.ceil(arquivo.size / tamanhoPedaco);
-            
-            socket.emit('audio_metadata', {
-                type: arquivo.type,
-                totalChunks: totalPedaços
-            });
-        
-            for (let i = 0; i < totalPedaços; i++) {
-                const inicio = i * tamanhoPedaco;
-                const fim = Math.min(inicio + tamanhoPedaco, arquivo.size);
-                const pedaco = arquivo.slice(inicio, fim);
-                
-                const leitor = new FileReader();
-                leitor.readAsArrayBuffer(pedaco);
-                await new Promise(resolve => {
-                    leitor.onload = function(e) {
-                        socket.emit('audio_chunk', {
-                            chunkId: i,
-                            data: e.target.result
-                        });
-                        resolve();
-                    };
-                });
-            }
-            
-            // Limpa o input de arquivo após o envio
-            entradaArquivo.value = '';
-        }
-        
-        // Recebe pedaços de áudio
-        socket.on('audio_processed', function(dados) {
-            currentStreamId = dados.id_transmissao; // Atualiza o ID da transmissão atual
-            document.getElementById('status').innerText = 
-                `Recebendo pedaço ${dados.id_pedaco + 1} de ${dados.total_pedaços}`;
-            
-            // Inicializa o buffer se for um novo stream
-            if (!buffersAudio[dados.id_transmissao]) {
-                buffersAudio[dados.id_transmissao] = {
-                    pedaços: [],
-                    recebidos: 0,
-                    total: dados.total_pedaços
-                };
-            }
-            
-            // Armazena o pedaço recebido
-            buffersAudio[dados.id_transmissao].pedaços[dados.id_pedaco] = dados.dados;
-            buffersAudio[dados.id_transmissao].recebidos++;
-            
-            // Quando todos os pedaços forem recebidos
-            if (buffersAudio[dados.id_transmissao].recebidos === dados.total_pedaços) {
-                const pedaços = buffersAudio[dados.id_transmissao].pedaços;
-                const blobAudio = new Blob(pedaços, { type: 'audio/*' });
-                const urlAudio = URL.createObjectURL(blobAudio);
-                
-                audioPlayer.src = urlAudio;
-                audioPlayer.onloadedmetadata = () => {
-                    document.getElementById('status').innerText = "Áudio pronto - aguardando sincronização...";
-                    // Notifica o servidor que está pronto para reproduzir
-                    socket.emit('cliente_pronto', {
-                        id_transmissao: currentStreamId
-                    });
-                };
-                
-                // Limpa o buffer após uso
-                delete buffersAudio[dados.id_transmissao];
-            }
-        });
-    
-        async function tentarReproducao() {
-            try {
-                await audioPlayer.play();
-            } catch (e) {
-                console.log("Reprodução bloqueada, aguardando interação.");
-                document.getElementById('status').innerText = "Toque para iniciar a reprodução";
-                document.body.addEventListener('click', () => {
-                    audioPlayer.play();
-                }, { once: true });
-            }
-        }
-
-        socket.on('iniciar_reproducao', function(data) {
-            if (data.id_transmissao === currentStreamId) {
-                isPlaying = true;
-                audioPlayer.currentTime = 0;
-                tentarReproducao();
-                document.getElementById('status').innerText = "Reproduzindo sincronizado!";
-            }
-        });
-    
-        // Recebe comandos de controle (play/pause)
-        socket.on('player_control', function(data) {
-            try {
-                if (!data || !data.action || data.id_transmissao !== currentStreamId) {
-                    return;
-                }
-    
-                // Se for um comando de play e não estivermos reproduzindo ainda
-                if (data.action === 'play' && !isPlaying) {
-                    return; // Ignora, pois a reprodução será iniciada pelo 'iniciar_reproducao'
-                }
-    
-                console.log(`Recebido ${data.action} @ ${data.currentTime}s`);
-                
-                isSyncing = true;
-                audioPlayer.currentTime = data.currentTime || 0;
-                
-                if (data.action === 'play' && isPlaying) {
-                    audioPlayer.play().catch(e => console.error("Autoplay bloqueado:", e));
-                } else {
-                    audioPlayer.pause();
-                }
-                
-                document.getElementById('status').innerText = 
-                    `Controle: ${data.action} @ ${data.currentTime.toFixed(2)}s`;
-                
-            } catch (e) {
-                console.error("Erro no handler de controle:", e);
-            } finally {
-                setTimeout(() => isSyncing = false, 100);
-            }
-        });
-    
-        // Envia comandos quando usuário interage
-        function sendControl(action) {
-            if (isSyncing || !currentStreamId || !isPlaying) return;
-            
-            socket.emit('player_control', {
-                action: action,
-                currentTime: audioPlayer.currentTime,
-                id_transmissao: currentStreamId
-            });
-            
-            console.log(`Enviando ${action} @ ${audioPlayer.currentTime}s`);
-        }
-    
-        // Configura listeners de eventos
-        audioPlayer.addEventListener('play', () => sendControl('play'));
-        audioPlayer.addEventListener('pause', () => sendControl('pause'));
-        audioPlayer.addEventListener('seeked', () => {
-            if (!audioPlayer.paused) {
-                sendControl('play');
-            }
-        });
-
-        // Menu mobile toggle
-        document.getElementById('mobile-menu').addEventListener('click', function() {
-            this.classList.toggle('active');
-            document.querySelector('.navbar-menu').classList.toggle('active');
-        });
-
-        // Status da conexão
-        socket.on('connect', () => {
-            document.getElementById('status').innerText = "Conectado ao servidor";
-            if (currentStreamId) {
-                socket.emit('cliente_pronto', { id_transmissao: currentStreamId });
-            }
-        });
-
-        socket.on('disconnect', () => {
-            document.getElementById('status').innerText = "Desconectado do servidor. Tentando reconectar...";
-        });
-
-        socket.on('reconnect_attempt', (attemptNumber) => {
-            document.getElementById('status').innerText = `Tentando reconectar (${attemptNumber})...`;
-        });
-    </script>
 </body>
 </html>

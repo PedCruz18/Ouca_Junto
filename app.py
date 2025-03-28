@@ -20,16 +20,16 @@ CORS(app)
 
 #-------------------------------------------------------------------
 
-# (Detecta se está rodando em produção ou local)-------------------------------------------------------------------
+# (Detecta se está rodando em hospedagem ou desenvolvimento)-------------------------------------------------------------------
 
 if os.getenv("RENDER") == "true":
     socketio = SocketIO(app, ping_timeout=120, ping_interval=20, async_mode='eventlet', cors_allowed_origins="*")
-    HOST = "0.0.0.0"  # Para produção, use "0.0.0.0"
+    HOST = "0.0.0.0"  # Para hospedagem, use "0.0.0.0"
     PORT = int(os.environ.get("PORT", 10000))  # Usa a porta definida pelo Render
     DEBUG_MODE = False  # Desativa o debug em produção
 else:
     socketio = SocketIO(app, ping_timeout=120, ping_interval=20, async_mode='eventlet', cors_allowed_origins="*")
-    HOST = "10.160.52.85"  # Para desenvolvimento, use "127.0.0.1"
+    HOST = "192.168.1.2"  # Para desenvolvimento, use "127.0.0.1"
     PORT = 5000  # Porta local
     DEBUG_MODE = True  # Ativa o debug em modo desenvolvimento
 
@@ -48,8 +48,8 @@ def index():
 
 # Estruturas de dados para armazenar sessões de áudio e clientes conectados
 sessoes_audio = defaultdict(dict)
-clientes_conectados = set()
 sessoes_prontas = defaultdict(set)
+clientes_conectados = set()
 
 # Eventos de WebSocket
 @socketio.on('connect')
