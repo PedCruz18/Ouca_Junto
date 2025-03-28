@@ -1,3 +1,4 @@
+// Imports de Interfaces
 import { tentarReproducao, sendControl } from './Interfaces.js';
 
 // Verifica se o script vai rodar em ambiente de produção ou desenvolvimento

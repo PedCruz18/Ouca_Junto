@@ -1,3 +1,4 @@
+// Imports de SistemaAudio
 import { isSyncing, audioPlayer, currentStreamId, isPlaying, socket } from "./SistemaAudio.js";
 
 // ---------------------------------------------------------------------------
