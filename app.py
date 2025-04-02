@@ -1,8 +1,10 @@
 # (IMPORTS)---------------------------------------------------------
+import random
+import string
 import eventlet
 eventlet.monkey_patch()
-from flask import Flask, render_template
-from flask_socketio import SocketIO
+from flask import Flask, render_template, request, jsonify
+from flask_socketio import SocketIO, emit
 from flask_cors import CORS
 import os
 
@@ -43,7 +45,29 @@ def Rádio():
 
 #-----------------------------------------
 
+def generate_short_id():
+    """Gera um ID de 5 caracteres alfanuméricos (ex: 'a3b9c')."""
+    chars = string.ascii_lowercase + string.digits  # abcdefghijklmnopqrstuvwxyz0123456789
+    return ''.join(random.choice(chars) for _ in range(5))
 
+# Rota que seu frontend já chama (/get_client_id)
+@app.route('/get_client_id')
+def get_client_id():
+    client_id = generate_short_id()
+    print(f'[Backend] ID curto gerado: {client_id}')
+    return jsonify({"client_id": client_id})  # Mantém a mesma estrutura que seu JS espera
+
+# Evento de conexão do Socket.IO
+@socketio.on('connect')
+def handle_connect():
+    client_id = request.args.get('client_id')
+    if client_id and len(client_id) == 5:
+        print(f'[Socket] Cliente conectado com ID curto válido: {client_id}')
+    else:
+        client_id = generate_short_id()
+        print(f'[Socket] Gerado novo ID curto para cliente: {client_id}')
+    
+    emit('client_id_update', {'client_id': client_id})  # Envia o ID (curto) de volta
 
 # Executor do servidor
 if __name__ == '__main__':

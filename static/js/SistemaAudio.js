@@ -179,18 +179,52 @@ socket.on('player_control', function(data) {
 
 // ------------------------------------------------------------------
 
-// Eventos de conexão do socket - (conexões apenas para monitorar algumas ações de clintes na interface)
-socket.on('connect', () => {
-    document.getElementById('status').innerText = "Conectado ao servidor";
-    console.log(`Cliente conectado: ${socket.id}`);
-});
+// Recupera ou solicita um ID do backend
+async function fetchOrCreateClientId() {
+    let clientId = localStorage.getItem('backend_client_id');
+    
+    // Se não existir, busca um novo ID do backend
+    if (!clientId) {
+        console.log('[Client] Nenhum ID encontrado no cache. Solicitando novo ID ao backend...');
+        const response = await fetch('/get_client_id');
+        const data = await response.json();
+        clientId = data.client_id;
+        localStorage.setItem('backend_client_id', clientId);
+        console.log('[Client] Novo ID gerado pelo backend:', clientId);
+    } else {
+        //console.log('[Client] ID recuperado do cache:', clientId);
+    }
+    
+    return clientId;
+}
 
-socket.on('disconnect', () => {
-    document.getElementById('status').innerText = "Desconectado do servidor. Tentando reconectar...";
-    console.log(`Cliente desconectado: ${socket.id}`);
-});
+// Conecta ao Socket.IO com o ID
+async function setupSocket() {
+    const clientId = await fetchOrCreateClientId();
 
-socket.on('reconnect_attempt', (attemptNumber) => {
-    document.getElementById('status').innerText = `Tentando reconectar (${attemptNumber})...`;
-    console.log(`Cliente reconectado: ${socket.id}`);
-});
+    // Conecta ao Socket.IO passando o ID como parâmetro
+    const socket = io({
+        query: { client_id: clientId }
+    });
+
+    console.log('[Socket] Conectando ao servidor com ID:', clientId);
+
+    // Eventos de conexão/desconexão nativos
+    socket.on('connect', () => {
+       // console.log('[Socket] Conectado ao servidor. ID da conexão Socket.IO:', socket.id);
+    });
+
+    socket.on('disconnect', () => {
+        console.log('[Socket] Desconectado do servidor');
+    });
+
+    // Atualiza se o servidor enviar um novo ID (ex: sessão expirada)
+    socket.on('client_id_update', (data) => {
+        if (data.client_id !== clientId) {
+            localStorage.setItem('backend_client_id', data.client_id);
+            console.log('[Server] ID atualizado pelo servidor:', data.client_id);
+        }
+    });
+}
+
+setupSocket();
