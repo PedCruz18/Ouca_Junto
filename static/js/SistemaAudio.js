@@ -5,7 +5,7 @@ import { tentarReproducao, sendControl } from './Interfaces.js';
 const isProduction = window.location.hostname !== "localhost";
 const SERVER_URL = isProduction 
     ? "https://ouca-junto.onrender.com"  // URL de produção
-    : "http://192.168.1.2:5000";  // URL local para desenvolvimento
+    : "http://192.168.137.1:5000";  // URL local para desenvolvimento
 
 // Configura o socket.io com opções de reconexão
 export const socket = io(SERVER_URL, {
@@ -26,6 +26,17 @@ export let currentStreamId = null;  // ID da transmissão atual
 export let isSyncing = false;        // Flag que indica se está sincronizando
 export let isPlaying = false;        // Flag que indica se o áudio está tocando
 export const audioPlayer = document.getElementById('reprodutorAudio');  // Elemento de player de áudio
+
+// ------------------------------------------------------------------
+
+// ------------------------------------------------------------------
+
+// Configura listeners de eventos para controle do player
+audioPlayer.addEventListener('play', () => sendControl('play')); // -> Linstener para os clientes sempre ouvirem quando alguem dar play
+audioPlayer.addEventListener('pause', () => sendControl('pause')); // -> Linstener para os clientes sempre ouvirem quando alguem dar pause
+audioPlayer.addEventListener('seeked', () => {
+    if (!audioPlayer.paused) { sendControl('play'); } // -> Linstener para os clientes sincronizar a posição exata da barra da musica
+}); 
 
 // ------------------------------------------------------------------
 
@@ -168,29 +179,18 @@ socket.on('player_control', function(data) {
 
 // ------------------------------------------------------------------
 
-// Configura listeners de eventos para controle do player
-audioPlayer.addEventListener('play', () => sendControl('play'));
-audioPlayer.addEventListener('pause', () => sendControl('pause'));
-audioPlayer.addEventListener('seeked', () => {
-    if (!audioPlayer.paused) {
-        sendControl('play');
-    }
-});
-
-// ------------------------------------------------------------------
-
-// Eventos de conexão do socket
+// Eventos de conexão do socket - (conexões apenas para monitorar algumas ações de clintes na interface)
 socket.on('connect', () => {
     document.getElementById('status').innerText = "Conectado ao servidor";
-    if (currentStreamId) {
-        socket.emit('cliente_pronto', { id_transmissao: currentStreamId });
-    }
+    console.log(`Cliente conectado: ${socket.id}`);
 });
 
 socket.on('disconnect', () => {
     document.getElementById('status').innerText = "Desconectado do servidor. Tentando reconectar...";
+    console.log(`Cliente desconectado: ${socket.id}`);
 });
 
 socket.on('reconnect_attempt', (attemptNumber) => {
     document.getElementById('status').innerText = `Tentando reconectar (${attemptNumber})...`;
+    console.log(`Cliente reconectado: ${socket.id}`);
 });
