@@ -161,7 +161,6 @@ socket.on('audio_processed', function(dados) {
     }
 });
 
-
 // Tenta iniciar a reprodução sincronizada
 socket.on('iniciar_reproducao', function(data) {
     if (data.id_transmissao === currentStreamId) {
