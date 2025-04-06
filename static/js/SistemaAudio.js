@@ -2,15 +2,16 @@
 import { tentarReproducao, sendControl } from './Interfaces.js';
 
 // Verifica se o script vai rodar em ambiente de produção ou desenvolvimento
-const isProduction = window.location.hostname !== "localhost";
+const isProduction = !["localhost", "127.0.0.1", "192.168.1.2"].includes(window.location.hostname);
 const SERVER_URL = isProduction 
     ? "https://ouca-junto.onrender.com"  // URL de produção
-    : "http://192.168.137.1:5000";  // URL local para desenvolvimento
+    : "http://192.168.1.2:5000";  // URL local para desenvolvimento
 
 // Configura o socket.io com opções de reconexão
 export const socket = io(SERVER_URL, {
-    transports: ["websocket"],  // Usando apenas WebSocket
+    transports: ["websocket", "polling"],  // Permite fallback para polling
     secure: isProduction,  // Habilita SSL em produção
+    withCredentials: true, // Para CORS em alguns servidores
     reconnection: true,  // Habilita reconexão automática
     reconnectionAttempts: 5,  // Limita a 5 tentativas de reconexão
     reconnectionDelay: 2000  // Intervalo de 2 segundos entre as tentativas de reconexão
@@ -29,108 +30,137 @@ export const audioPlayer = document.getElementById('reprodutorAudio');  // Eleme
 
 // ------------------------------------------------------------------
 
-// ------------------------------------------------------------------
+audioPlayer.addEventListener('play', () => {
+    console.log('Evento: play acionado');
+    sendControl('play');
+});
 
-// Configura listeners de eventos para controle do player
-audioPlayer.addEventListener('play', () => sendControl('play')); // -> Linstener para os clientes sempre ouvirem quando alguem dar play
-audioPlayer.addEventListener('pause', () => sendControl('pause')); // -> Linstener para os clientes sempre ouvirem quando alguem dar pause
+audioPlayer.addEventListener('pause', () => {
+    console.log('Evento: pause acionado');
+    sendControl('pause');
+});
+
 audioPlayer.addEventListener('seeked', () => {
-    if (!audioPlayer.paused) { sendControl('play'); } // -> Linstener para os clientes sincronizar a posição exata da barra da musica
-}); 
+    console.log('Evento: seeked acionado na posição:', audioPlayer.currentTime);
+    if (!audioPlayer.paused) { 
+        sendControl('play'); 
+    }
+});
 
 // ------------------------------------------------------------------
 
-// Função que envia o áudio para o servidor em pedaços
-window.enviarAudio = async function() {
-    const entradaArquivo = document.getElementById('arquivoAudio');
-    const arquivo = entradaArquivo.files[0];  // Obtém o arquivo selecionado
+// Captura o ID da transmissão quando o backend responde
+socket.on("transmissao_iniciada", (data) => {
+    currentStreamId = data.id_transmissao;
+    console.log("📡 Nova transmissão iniciada! ID:", currentStreamId);
+});
 
-    window.toggleMenu();  // Fecha o menu de upload
+window.enviarAudio = async function () {
+    const entradaArquivo = document.getElementById("arquivoAudio");
+    const arquivo = entradaArquivo.files[0];
 
-    // Verifica se um arquivo foi selecionado
+    window.toggleMenu();
+
     if (!arquivo) {
+        console.warn("⚠️ Nenhum arquivo selecionado para envio.");
         return;
     }
-    
-    document.getElementById('status').innerText = "Preparando envio...";  // Atualiza o status
 
-    const tamanhoPedaco = 1024 * 512;  // Tamanho de cada pedaço do áudio em bytes
-    const totalPedaços = Math.ceil(arquivo.size / tamanhoPedaco);  // Calcula o número total de pedaços
-    console.log(`Total de pedaços: ${totalPedaços}`);  // Exibe no console para debug
+    document.getElementById("status").innerText = "Preparando envio...";
 
-    // Envia metadados do áudio (tipo e número de pedaços)
-    socket.emit('audio_metadata', {
+    const tamanhoPedaco = 1024 * 512;
+    const totalPedaços = Math.ceil(arquivo.size / tamanhoPedaco);
+    console.log(`🔄 Total de pedaços a serem enviados: ${totalPedaços}`);
+
+    // Envia os metadados para iniciar a transmissão
+    socket.emit("audio_metadata", {
         type: arquivo.type,
         totalChunks: totalPedaços
     });
+    console.log("📤 Metadados enviados:", { type: arquivo.type, totalChunks: totalPedaços });
 
-    // Envia cada pedaço do áudio
+    // 🔴 ESPERA O BACKEND ENVIAR O ID DA TRANSMISSÃO
+    while (!currentStreamId) {
+        console.log("⏳ Aguardando ID da transmissão...");
+        await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+
+    console.log("📤 Iniciando envio de áudio com ID:", currentStreamId);
+
+    // Envio dos pedaços do áudio
     for (let i = 0; i < totalPedaços; i++) {
         const inicio = i * tamanhoPedaco;
         const fim = Math.min(inicio + tamanhoPedaco, arquivo.size);
-        const pedaco = arquivo.slice(inicio, fim);  // Extrai o pedaço do arquivo
+        const pedaco = arquivo.slice(inicio, fim);
 
-        const leitor = new FileReader();
-        leitor.readAsArrayBuffer(pedaco);
-
-        // Aguarda o carregamento do pedaço para enviá-lo via socket
-        await new Promise(resolve => {
-            leitor.onload = function(e) {
-                socket.emit('audio_chunk', {
+        await new Promise((resolve) => {
+            const leitor = new FileReader();
+            leitor.onload = function (e) {
+                socket.emit("audio_chunk", {
+                    id_transmissao: currentStreamId,  // ✅ Agora enviamos o ID correto
                     chunkId: i,
                     data: e.target.result
                 });
+                console.log(`📦 Pedaço ${i + 1}/${totalPedaços} enviado (${fim - inicio} bytes)`);
                 resolve();
             };
+            leitor.readAsArrayBuffer(pedaco);
         });
     }
 
-    // Limpa o input de arquivo após o envio
-    entradaArquivo.value = '';
-    console.log("Envio de áudio completo");
+    entradaArquivo.value = "";
+    console.log("✅ Envio de áudio completo");
 };
 
 // ------------------------------------------------------------------
 
-// Recebe os pedaços de áudio processados
 socket.on('audio_processed', function(dados) {
-    currentStreamId = dados.id_transmissao;  // Atualiza o ID da transmissão
-
-    // Atualiza o status com a informação do pedaço recebido
+    currentStreamId = dados.id_transmissao;
     document.getElementById('status').innerText = 
-        `Recebendo pedaço ${dados.id_pedaco + 1} de ${dados.total_pedaços}`;
+        `📥 Recebendo pedaço ${dados.id_pedaco + 1} de ${dados.total_pedaços}`;
 
-    // Inicializa o buffer se for um novo stream
     if (!buffersAudio[dados.id_transmissao]) {
         buffersAudio[dados.id_transmissao] = {
-            pedaços: [],  // Armazena os pedaços recebidos
-            recebidos: 0, // Contador de pedaços recebidos
-            total: dados.total_pedaços  // Total de pedaços esperados
+            pedaços: new Array(dados.total_pedaços).fill(null),
+            recebidos: 0,
+            total: dados.total_pedaços,
+            timer: null
         };
     }
 
-    // Armazena o pedaço recebido
     buffersAudio[dados.id_transmissao].pedaços[dados.id_pedaco] = dados.dados;
     buffersAudio[dados.id_transmissao].recebidos++;
 
-    // Quando todos os pedaços forem recebidos, recria o áudio e configura o player
+    // Reinicia um timer para verificar pacotes perdidos após 3 segundos
+    if (buffersAudio[dados.id_transmissao].timer) {
+        clearTimeout(buffersAudio[dados.id_transmissao].timer);
+    }
+    buffersAudio[dados.id_transmissao].timer = setTimeout(() => {
+        console.error(`❌ Timeout: Nem todos os pedaços foram recebidos! ${buffersAudio[dados.id_transmissao].recebidos}/${dados.total_pedaços}`);
+    }, 3000);
+
     if (buffersAudio[dados.id_transmissao].recebidos === dados.total_pedaços) {
+        clearTimeout(buffersAudio[dados.id_transmissao].timer); // Cancela o timeout se tudo chegou
+        
         const pedaços = buffersAudio[dados.id_transmissao].pedaços;
+        if (pedaços.includes(null)) {
+            console.error("❌ Pacote de áudio corrompido! Falta algum pedaço.");
+            return;
+        }
+
         const blobAudio = new Blob(pedaços, { type: 'audio/*' });
         const urlAudio = URL.createObjectURL(blobAudio);
         
         audioPlayer.src = urlAudio;
         audioPlayer.onloadedmetadata = () => {
-            document.getElementById('status').innerText = "Áudio pronto - aguardando sincronização...";
-            socket.emit('cliente_pronto', {
-                id_transmissao: currentStreamId  // Notifica o servidor que está pronto
-            });
+            document.getElementById('status').innerText = "🎵 Áudio pronto - aguardando sincronização...";
+            socket.emit('cliente_pronto', { id_transmissao: currentStreamId });
         };
-        
-        // Limpa o buffer após uso
+
         delete buffersAudio[dados.id_transmissao];
     }
 });
+
 
 // Tenta iniciar a reprodução sincronizada
 socket.on('iniciar_reproducao', function(data) {
@@ -179,52 +209,14 @@ socket.on('player_control', function(data) {
 
 // ------------------------------------------------------------------
 
-// Recupera ou solicita um ID do backend
-async function fetchOrCreateClientId() {
-    let clientId = localStorage.getItem('backend_client_id');
-    
-    // Se não existir, busca um novo ID do backend
-    if (!clientId) {
-        console.log('[Client] Nenhum ID encontrado no cache. Solicitando novo ID ao backend...');
-        const response = await fetch('/get_client_id');
-        const data = await response.json();
-        clientId = data.client_id;
-        localStorage.setItem('backend_client_id', clientId);
-        console.log('[Client] Novo ID gerado pelo backend:', clientId);
-    } else {
-        //console.log('[Client] ID recuperado do cache:', clientId);
-    }
-    
-    return clientId;
-}
+socket.on("connect", () => {
+    console.log("✅ Conectado ao servidor:", SERVER_URL);
+});
 
-// Conecta ao Socket.IO com o ID
-async function setupSocket() {
-    const clientId = await fetchOrCreateClientId();
+socket.on("connect_error", (err) => {
+    console.error("❌ Erro de conexão:", err.message);
+});
 
-    // Conecta ao Socket.IO passando o ID como parâmetro
-    const socket = io({
-        query: { client_id: clientId }
-    });
-
-    console.log('[Socket] Conectando ao servidor com ID:', clientId);
-
-    // Eventos de conexão/desconexão nativos
-    socket.on('connect', () => {
-       // console.log('[Socket] Conectado ao servidor. ID da conexão Socket.IO:', socket.id);
-    });
-
-    socket.on('disconnect', () => {
-        console.log('[Socket] Desconectado do servidor');
-    });
-
-    // Atualiza se o servidor enviar um novo ID (ex: sessão expirada)
-    socket.on('client_id_update', (data) => {
-        if (data.client_id !== clientId) {
-            localStorage.setItem('backend_client_id', data.client_id);
-            console.log('[Server] ID atualizado pelo servidor:', data.client_id);
-        }
-    });
-}
-
-setupSocket();
+socket.on("disconnect", (reason) => {
+    console.warn("⚠️ Desconectado do servidor:", reason);
+});
