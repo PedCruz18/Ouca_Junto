@@ -171,38 +171,30 @@ socket.on('iniciar_reproducao', function(data) {
     }
 });
 
-// Recebe comandos de controle (play/pause)
 socket.on('player_control', function(data) {
     try {
         if (!data || !data.action || data.id_transmissao !== currentStreamId) {
             return;
         }
 
-        // Se for um comando de play e não estivermos reproduzindo ainda
-        if (data.action === 'play' && !isPlaying) {
-            return;  // Ignora, a reprodução será iniciada pelo 'iniciar_reproducao'
-        }
-
         console.log(`Recebido ${data.action} @ ${data.currentTime}s`);
+
+        isSyncing = true;  // 🔹 Evita loops de atualização
+        audioPlayer.currentTime = data.currentTime || 0;  // 🔹 Atualiza o tempo exato antes de reproduzir
         
-        isSyncing = true;
-        audioPlayer.currentTime = data.currentTime || 0;
-        
-        // Controla a reprodução (play ou pause)
-        if (data.action === 'play' && isPlaying) {
+        if (data.action === 'play') {
             audioPlayer.play().catch(e => console.error("Autoplay bloqueado:", e));
         } else {
             audioPlayer.pause();
         }
-        
-        // Atualiza o status com a ação recebida
+
         document.getElementById('status').innerText = 
             `Controle: ${data.action} @ ${data.currentTime.toFixed(2)}s`;
-        
+
     } catch (e) {
         console.error("Erro no handler de controle:", e);
     } finally {
-        setTimeout(() => isSyncing = false, 100);  // Garante que a sincronização seja finalizada
+        setTimeout(() => isSyncing = false, 100);  // 🔹 Pequeno atraso para garantir sincronização
     }
 });
 

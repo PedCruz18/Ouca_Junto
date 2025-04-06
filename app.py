@@ -27,6 +27,7 @@ else:
     DEBUG_MODE = True
 
 #-------------------------------------------------------------------
+
 # Estrutura para armazenar transmissões de áudio
 transmissoes = {}
 
@@ -84,13 +85,36 @@ def cliente_pronto(data):
 
     # Se todos os pedaços foram recebidos, iniciamos a reprodução
     if len(transmissoes[id_transmissao]["pedaços"]) == transmissoes[id_transmissao]["total_pedacos"]:
-        emit("iniciar_reproducao", {"id_transmissao": id_transmissao}, room=request.sid)
+        emit("iniciar_reproducao", {"id_transmissao": id_transmissao}, broadcast=True)
 
+@socketio.on("player_control")
+def controle_player(data):
+    """Repassa o controle do player (play, pause, seek) para todos os clientes."""
+    id_transmissao = data.get("id_transmissao")
+    action = data.get("action")
+    current_time = data.get("currentTime", 0)
+
+    if not id_transmissao or id_transmissao not in transmissoes:
+        print("❌ Erro: Transmissão não encontrada para controle")
+        return
+
+    print(f"🔄 Comando recebido: {action} @ {current_time}s")
+
+    # Envia para TODOS os clientes conectados
+    emit("player_control", {
+        "id_transmissao": id_transmissao,
+        "action": action,
+        "currentTime": current_time
+    }, broadcast=True)
+
+
+#-------------------------------------------------------------------
 
 @app.route('/')
 def Rádio():
     return render_template('Rádio.html')
 
+#-------------------------------------------------------------------
 
 if __name__ == '__main__':
     print(f"Iniciando servidor em modo {'produção' if not DEBUG_MODE else 'desenvolvimento'}...")
