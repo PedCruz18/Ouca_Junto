@@ -44,22 +44,29 @@ def obter_host(id_transmissao):
 def receber_metadata(data):
     """Recebe os metadados do áudio e mantém o mesmo ID para transmissões do mesmo host."""
     sid = request.sid
+    transmissao_id = None
 
-    if sid in transmissoes:
-        transmissao_id = transmissoes[sid]["id"]
-    else:
+    # Se já existe uma transmissão ativa, usamos o mesmo ID
+    for host_sid, info in transmissoes.items():
+        if sid in info["clientes_prontos"]:  # O cliente já está em uma transmissão
+            transmissao_id = info["id"]
+            break
+
+    # Se não existe um ID definido, é um novo host
+    if transmissao_id is None:
         transmissao_id = ''.join(random.choices("abcdefghijklmnopqrstuvwxyz0123456789", k=8))
         transmissoes[sid] = {
             "id": transmissao_id,
             "total_pedacos": data["totalChunks"],
             "tipo": data["type"],
             "pedaços": {},
-            "clientes_prontos": []
+            "clientes_prontos": [sid]  # Adiciona o próprio host
         }
 
     print(f"📡 Transmissão ativa: {transmissao_id} para {sid}")
 
     emit("transmissao_iniciada", {"id_transmissao": transmissao_id}, to=sid)
+
 
 @socketio.on("audio_chunk")
 def receber_pedaco(data):
@@ -88,7 +95,6 @@ def receber_pedaco(data):
         "total_pedaços": total_pedacos,
         "dados": chunk_data
     }, room=id_transmissao)
-
 
 @socketio.on("cliente_pronto")
 def cliente_pronto(data):

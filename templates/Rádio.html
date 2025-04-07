@@ -22,14 +22,22 @@
                 <li class="navbar-item"><a href="#" id="chat-toggle"><i class="fas fa-comments"></i> Bate-Papo</a></li>
                 <li class="navbar-item"><a href="#"><i class="fas fa-users"></i> Ouvintes</a></li>
                 <li class="navbar-item"><a href="#"><i class="fas fa-cog"></i> Configurações</a></li>
-                <!-- Campo para o usuário digitar o ID da transmissão -->
+                
+                <!-- Campo para conectar-se a uma transmissão -->
                 <div id="conectar">
                     <input type="text" id="idTransmissao" placeholder="Digite o ID da Transmissão">
                     <button onclick="conectarTransmissao()">Conectar</button>
                 </div>
+
+                <!-- Exibição do ID da sala com botão de saída (inicialmente oculto) -->
+                <div id="salaInfo" style="display: none; align-items: center;">
+                    <span id="idSala" style="margin-right: 10px; font-weight: bold;"></span>
+                    <button onclick="sairTransmissao()" style="background: red; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer;">Sair</button>
+                </div>
             </ul>
         </div>
     </nav>
+
 
     <!-- Conteúdo Central -->
     <main class="main-content">
@@ -58,7 +66,7 @@
 
     <!-- Rodapé -->
     <footer>
-        <p>OuçaJunto v.15 - ID DA SALA: <span id="idSala">Aguardando...</span></p>
+        <p>OuçaJunto v.15 - Todos Direitos Reservados.</p>
     </footer>    
 
     <!-- Scritp do sistema de audio -->

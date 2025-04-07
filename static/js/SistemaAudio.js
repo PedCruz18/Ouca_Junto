@@ -112,14 +112,27 @@ window.enviarAudio = async function () {
 
 // ------------------------------------------------------------------
 window.conectarTransmissao = conectarTransmissao;
-function atualizarFooterComID(id) {
+window.sairTransmissao = sairTransmissao;
+let isHost = false; // Define se o usuário é o transmissor
+
+function atualizarNavbar(id) {
+    const conectarDiv = document.getElementById("conectar");
+    const salaInfoDiv = document.getElementById("salaInfo");
     const idSalaElemento = document.getElementById("idSala");
-    if (idSalaElemento) {
-        idSalaElemento.innerText = id;
+
+    if (id) {
+        // Se há um ID, esconde o campo de conexão e exibe os detalhes da sala
+        conectarDiv.style.display = "none";
+        salaInfoDiv.style.display = "flex";
+        idSalaElemento.innerText = `Sala: ${id}`;
+    } else {
+        // Se não há ID, exibe o campo de conexão novamente
+        conectarDiv.style.display = "flex";
+        salaInfoDiv.style.display = "none";
     }
 }
 
-// Quando o usuário conecta manualmente a uma sala
+// Conectar como ouvinte
 function conectarTransmissao() {
     const input = document.getElementById("idTransmissao");
     const idTransmissao = input.value.trim();
@@ -133,10 +146,26 @@ function conectarTransmissao() {
     console.log(`🎧 Conectando à transmissão ${currentStreamId}...`);
     socket.emit("cliente_pronto", { id_transmissao: currentStreamId });
 
-    // Atualiza o rodapé com o ID da sala
-    atualizarFooterComID(currentStreamId);
-    
+    atualizarNavbar(currentStreamId);
     input.value = "";
+}
+
+// Sair da transmissão (para ouvintes e hosts)
+function sairTransmissao() {
+    if (!currentStreamId) return;
+
+    console.log("🚪 Saindo da transmissão...");
+    socket.emit("sair_transmissao", { id_transmissao: currentStreamId });
+
+    // Reseta o player de áudio
+    audioPlayer.pause();
+    audioPlayer.src = "";
+    audioPlayer.load(); // Garante que o player seja resetado completamente
+    document.getElementById('status').innerText = "🔇 Nenhuma transmissão ativa";
+
+    currentStreamId = null;
+    isHost = false;
+    atualizarNavbar(null);
 }
 
 // Quando o backend inicia uma transmissão e envia o ID
@@ -145,7 +174,7 @@ socket.on("transmissao_iniciada", (data) => {
     console.log("📡 Nova transmissão iniciada! ID:", currentStreamId);
 
     // Atualiza o rodapé com o ID da sala
-    atualizarFooterComID(currentStreamId);
+    atualizarNavbar(currentStreamId);
 });
 
 
