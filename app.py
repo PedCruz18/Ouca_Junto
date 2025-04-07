@@ -1,112 +1,137 @@
-# (IMPORTS)---------------------------------------------------------
 import random
 import eventlet
 eventlet.monkey_patch()
 from flask import Flask, render_template, request, jsonify
-from flask_socketio import SocketIO, emit
+from flask_socketio import SocketIO, emit, join_room
 from flask_cors import CORS
 import os
 
 #-------------------------------------------------------------------
 
-# (Inicialização de Recursos)---------------------------------------
-
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'minha-chave-secreta'
 CORS(app)
 
+# Configuração do ambiente
+socketio_config = {
+    "ping_timeout": 120,
+    "ping_interval": 20,
+    "async_mode": "eventlet",
+    "cors_allowed_origins": "*"
+}
+
 if os.getenv("RENDER", "false").lower() == "true":
-    socketio = SocketIO(app, ping_timeout=120, ping_interval=20, async_mode='eventlet', cors_allowed_origins="*")
-    HOST = "0.0.0.0"
-    PORT = int(os.environ.get("PORT", 10000))
-    DEBUG_MODE = False
+    HOST, PORT, DEBUG_MODE = "0.0.0.0", int(os.environ.get("PORT", 10000)), False
 else:
-    socketio = SocketIO(app, ping_timeout=120, ping_interval=20, async_mode='eventlet', cors_allowed_origins="*")
-    HOST = "192.168.1.2"
-    PORT = 5000
-    DEBUG_MODE = True
+    HOST, PORT, DEBUG_MODE = "10.160.52.85", 5000, True
+
+socketio = SocketIO(app, **socketio_config)
 
 #-------------------------------------------------------------------
 
 # Estrutura para armazenar transmissões de áudio
 transmissoes = {}
 
+def obter_host(id_transmissao):
+    """Obtém o host associado a uma transmissão, retornando None se não existir."""
+    for sid, info in transmissoes.items():
+        if info["id"] == id_transmissao:
+            return sid
+    print("❌ Erro: Transmissão não encontrada")
+    return None
+
 @socketio.on("audio_metadata")
 def receber_metadata(data):
-    """Recebe os metadados do áudio enviado por um cliente."""
-    transmissao_id = ''.join(random.choices("abcdefghijklmnopqrstuvwxyz0123456789", k=8))
-    transmissoes[transmissao_id] = {
-        "total_pedacos": data["totalChunks"],
-        "tipo": data["type"],
-        "pedaços": {},
-        "clientes_prontos": []
-    }
-    print(f"📡 Nova transmissão iniciada: {transmissao_id}")
-    emit("transmissao_iniciada", {"id_transmissao": transmissao_id}, broadcast=True)
+    """Recebe os metadados do áudio e mantém o mesmo ID para transmissões do mesmo host."""
+    sid = request.sid
 
+    if sid in transmissoes:
+        transmissao_id = transmissoes[sid]["id"]
+    else:
+        transmissao_id = ''.join(random.choices("abcdefghijklmnopqrstuvwxyz0123456789", k=8))
+        transmissoes[sid] = {
+            "id": transmissao_id,
+            "total_pedacos": data["totalChunks"],
+            "tipo": data["type"],
+            "pedaços": {},
+            "clientes_prontos": []
+        }
+
+    print(f"📡 Transmissão ativa: {transmissao_id} para {sid}")
+
+    emit("transmissao_iniciada", {"id_transmissao": transmissao_id}, to=sid)
 
 @socketio.on("audio_chunk")
 def receber_pedaco(data):
-    """Recebe um pedaço do áudio e armazena."""
+    """Recebe um pedaço do áudio e o envia apenas para os clientes conectados à transmissão."""
     id_transmissao = data.get("id_transmissao")
     id_pedaco = data.get("chunkId")
     chunk_data = data.get("data")
 
-    if id_transmissao not in transmissoes:
-        print("❌ Erro: Transmissão não encontrada")
+    host_sid = obter_host(id_transmissao)
+    if not host_sid:
         return
-    
-    transmissoes[id_transmissao]["pedaços"][id_pedaco] = chunk_data
-    total_pedacos = transmissoes[id_transmissao]["total_pedacos"]
+
+    # Evita reprocessar pedaços duplicados
+    if id_pedaco in transmissoes[host_sid]["pedaços"]:
+        print(f"⚠️ Pedaço {id_pedaco} já foi recebido, ignorando...")
+        return
+
+    transmissoes[host_sid]["pedaços"][id_pedaco] = chunk_data
+    total_pedacos = transmissoes[host_sid]["total_pedacos"]
 
     print(f"📥 Recebido pedaço {id_pedaco + 1}/{total_pedacos} da transmissão {id_transmissao}")
 
-    # Reenvia o pedaço para os clientes
     emit("audio_processed", {
         "id_transmissao": id_transmissao,
         "id_pedaco": id_pedaco,
         "total_pedaços": total_pedacos,
         "dados": chunk_data
-    }, broadcast=True)
+    }, room=id_transmissao)
 
 
 @socketio.on("cliente_pronto")
 def cliente_pronto(data):
-    """Marca um cliente como pronto para reprodução."""
+    """Adiciona o cliente à sala e envia os pedaços do áudio já recebidos."""
     id_transmissao = data.get("id_transmissao")
 
-    if id_transmissao not in transmissoes:
-        print("❌ Erro: Transmissão não encontrada")
+    host_sid = obter_host(id_transmissao)
+    if not host_sid:
         return
 
-    transmissoes[id_transmissao]["clientes_prontos"].append(request.sid)
+    join_room(id_transmissao)
+    transmissoes[host_sid]["clientes_prontos"].append(request.sid)
 
-    print(f"🎧 Cliente {request.sid} pronto para transmissão {id_transmissao}")
+    print(f"🎧 Cliente {request.sid} conectado à transmissão {id_transmissao}")
 
-    # Se todos os pedaços foram recebidos, iniciamos a reprodução
-    if len(transmissoes[id_transmissao]["pedaços"]) == transmissoes[id_transmissao]["total_pedacos"]:
-        emit("iniciar_reproducao", {"id_transmissao": id_transmissao}, broadcast=True)
+    # Reenviar os pedaços já recebidos para o novo cliente
+    for chunk_id, chunk_data in transmissoes[host_sid]["pedaços"].items():
+        emit("audio_processed", {
+            "id_transmissao": id_transmissao,
+            "id_pedaco": chunk_id,
+            "total_pedaços": transmissoes[host_sid]["total_pedacos"],
+            "dados": chunk_data
+        }, to=request.sid)
+
+    emit("iniciar_reproducao", {"id_transmissao": id_transmissao}, to=request.sid)
 
 @socketio.on("player_control")
 def controle_player(data):
-    """Repassa o controle do player (play, pause, seek) para todos os clientes."""
+    """Repassa o controle do player apenas para os clientes da transmissão."""
     id_transmissao = data.get("id_transmissao")
     action = data.get("action")
     current_time = data.get("currentTime", 0)
 
-    if not id_transmissao or id_transmissao not in transmissoes:
-        print("❌ Erro: Transmissão não encontrada para controle")
+    if not obter_host(id_transmissao):
         return
 
     print(f"🔄 Comando recebido: {action} @ {current_time}s")
 
-    # Envia para TODOS os clientes conectados
     emit("player_control", {
         "id_transmissao": id_transmissao,
         "action": action,
         "currentTime": current_time
-    }, broadcast=True)
-
+    }, room=id_transmissao)
 
 #-------------------------------------------------------------------
 

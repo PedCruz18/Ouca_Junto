@@ -2,10 +2,10 @@
 import { tentarReproducao, sendControl } from './Interfaces.js';
 
 // Verifica se o script vai rodar em ambiente de produção ou desenvolvimento
-const isProduction = !["localhost", "127.0.0.1", "192.168.1.2"].includes(window.location.hostname);
+const isProduction = !["localhost", "127.0.0.1", "10.160.52.85"].includes(window.location.hostname);
 const SERVER_URL = isProduction 
     ? "https://ouca-junto.onrender.com"  // URL de produção
-    : "http://192.168.1.2:5000";  // URL local para desenvolvimento
+    : "http://10.160.52.85:5000";  // URL local para desenvolvimento
 
 // Configura o socket.io com opções de reconexão
 export const socket = io(SERVER_URL, {
@@ -42,18 +42,13 @@ audioPlayer.addEventListener('pause', () => {
 
 audioPlayer.addEventListener('seeked', () => {
     console.log('Evento: seeked acionado na posição:', audioPlayer.currentTime);
-    if (!audioPlayer.paused) { 
+    
+    if (!isSyncing) {  // ✅ Evita enviar comandos em loop
         sendControl('play'); 
     }
 });
 
 // ------------------------------------------------------------------
-
-// Captura o ID da transmissão quando o backend responde
-socket.on("transmissao_iniciada", (data) => {
-    currentStreamId = data.id_transmissao;
-    console.log("📡 Nova transmissão iniciada! ID:", currentStreamId);
-});
 
 window.enviarAudio = async function () {
     const entradaArquivo = document.getElementById("arquivoAudio");
@@ -79,13 +74,16 @@ window.enviarAudio = async function () {
     });
     console.log("📤 Metadados enviados:", { type: arquivo.type, totalChunks: totalPedaços });
 
-    // 🔴 ESPERA O BACKEND ENVIAR O ID DA TRANSMISSÃO
+    // 🔴 Aguarda o ID da transmissão
     while (!currentStreamId) {
         console.log("⏳ Aguardando ID da transmissão...");
         await new Promise((resolve) => setTimeout(resolve, 100));
     }
 
-    console.log("📤 Iniciando envio de áudio com ID:", currentStreamId);
+    // ✅ **AUTOCONECTA** o cliente que enviou o áudio à transmissão
+    console.log(`🎧 Conectando automaticamente à transmissão ${currentStreamId}...`);
+    socket.emit("cliente_pronto", { id_transmissao: currentStreamId });
+    document.getElementById("status").innerText = `🔄 Aguardando áudio da transmissão ${currentStreamId}...`;
 
     // Envio dos pedaços do áudio
     for (let i = 0; i < totalPedaços; i++) {
@@ -97,7 +95,7 @@ window.enviarAudio = async function () {
             const leitor = new FileReader();
             leitor.onload = function (e) {
                 socket.emit("audio_chunk", {
-                    id_transmissao: currentStreamId,  // ✅ Agora enviamos o ID correto
+                    id_transmissao: currentStreamId,
                     chunkId: i,
                     data: e.target.result
                 });
@@ -113,53 +111,98 @@ window.enviarAudio = async function () {
 };
 
 // ------------------------------------------------------------------
+window.conectarTransmissao = conectarTransmissao;
+function atualizarFooterComID(id) {
+    const idSalaElemento = document.getElementById("idSala");
+    if (idSalaElemento) {
+        idSalaElemento.innerText = id;
+    }
+}
+
+// Quando o usuário conecta manualmente a uma sala
+function conectarTransmissao() {
+    const input = document.getElementById("idTransmissao");
+    const idTransmissao = input.value.trim();
+
+    if (!idTransmissao) {
+        alert("⚠️ Por favor, digite um ID de transmissão válido.");
+        return;
+    }
+
+    currentStreamId = idTransmissao;
+    console.log(`🎧 Conectando à transmissão ${currentStreamId}...`);
+    socket.emit("cliente_pronto", { id_transmissao: currentStreamId });
+
+    // Atualiza o rodapé com o ID da sala
+    atualizarFooterComID(currentStreamId);
+    
+    input.value = "";
+}
+
+// Quando o backend inicia uma transmissão e envia o ID
+socket.on("transmissao_iniciada", (data) => {
+    currentStreamId = data.id_transmissao;
+    console.log("📡 Nova transmissão iniciada! ID:", currentStreamId);
+
+    // Atualiza o rodapé com o ID da sala
+    atualizarFooterComID(currentStreamId);
+});
+
 
 socket.on('audio_processed', function(dados) {
-    currentStreamId = dados.id_transmissao;
+    const id = dados.id_transmissao;
+
+    if (!buffersAudio[id]) {
+        buffersAudio[id] = {
+            pedaços: new Array(dados.total_pedaços).fill(null),
+            recebidos: 0,
+            total: dados.total_pedaços
+        };
+    }
+
+    // Verifica se o pedaço já foi recebido
+    if (buffersAudio[id].pedaços[dados.id_pedaco] !== null) {
+        console.warn(`⚠️ Pedaço ${dados.id_pedaco} já recebido, ignorando...`);
+        return;
+    }
+
     document.getElementById('status').innerText = 
         `📥 Recebendo pedaço ${dados.id_pedaco + 1} de ${dados.total_pedaços}`;
 
-    if (!buffersAudio[dados.id_transmissao]) {
-        buffersAudio[dados.id_transmissao] = {
-            pedaços: new Array(dados.total_pedaços).fill(null),
-            recebidos: 0,
-            total: dados.total_pedaços,
-            timer: null
-        };
-    }
+    // Armazena o pedaço no buffer
+    buffersAudio[id].pedaços[dados.id_pedaco] = dados.dados;
+    buffersAudio[id].recebidos++;
 
-    buffersAudio[dados.id_transmissao].pedaços[dados.id_pedaco] = dados.dados;
-    buffersAudio[dados.id_transmissao].recebidos++;
+    console.log(`✅ Pedaço ${dados.id_pedaco} armazenado (${buffersAudio[id].recebidos}/${dados.total_pedaços})`);
 
-    // Reinicia um timer para verificar pacotes perdidos após 3 segundos
-    if (buffersAudio[dados.id_transmissao].timer) {
-        clearTimeout(buffersAudio[dados.id_transmissao].timer);
-    }
-    buffersAudio[dados.id_transmissao].timer = setTimeout(() => {
-        console.error(`❌ Timeout: Nem todos os pedaços foram recebidos! ${buffersAudio[dados.id_transmissao].recebidos}/${dados.total_pedaços}`);
-    }, 3000);
+    // Se todos os pedaços foram recebidos, monta o áudio
+    if (buffersAudio[id].recebidos === buffersAudio[id].total) {
+        console.log("📦 Todos os pedaços recebidos, montando áudio...");
 
-    if (buffersAudio[dados.id_transmissao].recebidos === dados.total_pedaços) {
-        clearTimeout(buffersAudio[dados.id_transmissao].timer); // Cancela o timeout se tudo chegou
-        
-        const pedaços = buffersAudio[dados.id_transmissao].pedaços;
-        if (pedaços.includes(null)) {
-            console.error("❌ Pacote de áudio corrompido! Falta algum pedaço.");
+        if (buffersAudio[id].pedaços.includes(null)) {
+            console.error("❌ Erro: Alguns pedaços estão faltando!");
             return;
         }
 
-        const blobAudio = new Blob(pedaços, { type: 'audio/*' });
+        const blobAudio = new Blob(buffersAudio[id].pedaços, { type: 'audio/*' });
         const urlAudio = URL.createObjectURL(blobAudio);
-        
+
+        console.log("🎵 Áudio montado com sucesso!");
+
         audioPlayer.src = urlAudio;
         audioPlayer.onloadedmetadata = () => {
-            document.getElementById('status').innerText = "🎵 Áudio pronto - aguardando sincronização...";
-            socket.emit('cliente_pronto', { id_transmissao: currentStreamId });
+            document.getElementById('status').innerText = "🎵 Áudio pronto para reprodução!";
+            console.log("🟢 Tentando reproduzir áudio...");
+            audioPlayer.play().catch(err => {
+                console.warn("🔴 Falha ao iniciar reprodução automática:", err);
+                document.getElementById('status').innerText = "Clique para reproduzir!";
+            });
         };
 
-        delete buffersAudio[dados.id_transmissao];
+        delete buffersAudio[id]; // Limpa o buffer após processamento
     }
 });
+
 
 // Tenta iniciar a reprodução sincronizada
 socket.on('iniciar_reproducao', function(data) {
@@ -197,6 +240,8 @@ socket.on('player_control', function(data) {
         setTimeout(() => isSyncing = false, 100);  // 🔹 Pequeno atraso para garantir sincronização
     }
 });
+
+
 
 // ------------------------------------------------------------------
 
