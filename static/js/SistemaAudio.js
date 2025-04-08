@@ -177,13 +177,13 @@ socket.on("transmissao_iniciada", (data) => {
     atualizarNavbar(currentStreamId);
 });
 
-
 socket.on('audio_processed', function(dados) {
     const id = dados.id_transmissao;
 
+    // Verifica se o buffer de áudio existe para esse ID
     if (!buffersAudio[id]) {
         buffersAudio[id] = {
-            pedaços: new Array(dados.total_pedaços).fill(null),
+            pedaços: new Array(dados.total_pedaços).fill(null), // Inicializa com null para todos os pedaços
             recebidos: 0,
             total: dados.total_pedaços
         };
@@ -192,7 +192,7 @@ socket.on('audio_processed', function(dados) {
     // Verifica se o pedaço já foi recebido
     if (buffersAudio[id].pedaços[dados.id_pedaco] !== null) {
         console.warn(`⚠️ Pedaço ${dados.id_pedaco} já recebido, ignorando...`);
-        return;
+        return; // Ignora o pedaço duplicado
     }
 
     document.getElementById('status').innerText = 
@@ -228,10 +228,14 @@ socket.on('audio_processed', function(dados) {
             });
         };
 
-        delete buffersAudio[id]; // Limpa o buffer após processamento
+        // Resetar o buffer após o áudio ser montado e tocado
+        setTimeout(() => {
+            console.log("🧹 Limpando buffer de áudio após reprodução...");
+            delete buffersAudio[id]; // Limpa o buffer após o processamento completo
+        }, 1000); // Espera 1 segundo antes de limpar o buffer, para garantir que o áudio comece a ser reproduzido
+
     }
 });
-
 
 // Tenta iniciar a reprodução sincronizada
 socket.on('iniciar_reproducao', function(data) {
@@ -269,8 +273,6 @@ socket.on('player_control', function(data) {
         setTimeout(() => isSyncing = false, 100);  // 🔹 Pequeno atraso para garantir sincronização
     }
 });
-
-
 
 // ------------------------------------------------------------------
 

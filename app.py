@@ -42,32 +42,26 @@ def obter_host(id_transmissao):
 
 @socketio.on("audio_metadata")
 def receber_metadata(data):
-    """Recebe os metadados do áudio e mantém o mesmo ID para transmissões do mesmo host."""
+    """Recebe os metadados do áudio de qualquer cliente na transmissão."""
     sid = request.sid
-    transmissao_id = None
+    id_transmissao = data.get("id_transmissao")  # O cliente deve enviar o ID da transmissão
+    
+    if not id_transmissao or not cliente_pertence_transmissao(sid, id_transmissao):
+        print(f"❌ Cliente {sid} não pertence à transmissão {id_transmissao}")
+        return
 
-    # Se já existe uma transmissão ativa, usamos o mesmo ID
-    for host_sid, info in transmissoes.items():
-        if sid in info["clientes_prontos"]:  # O cliente já está em uma transmissão
-            transmissao_id = info["id"]
-            break
+    host_sid = obter_host(id_transmissao)
+    if not host_sid:
+        return
 
-    # Se não existe um ID definido, é um novo host
-    if transmissao_id is None:
-        transmissao_id = ''.join(random.choices("abcdefghijklmnopqrstuvwxyz0123456789", k=8))
-        transmissoes[sid] = {
-            "id": transmissao_id,
-            "total_pedacos": data["totalChunks"],
-            "tipo": data["type"],
-            "pedaços": {},
-            "clientes_prontos": [sid]  # Adiciona o próprio host
-        }
+    # Limpa os pedaços anteriores da transmissão
+    transmissoes[host_sid]["pedaços"].clear()
+    transmissoes[host_sid]["total_pedacos"] = data["totalChunks"]
+    transmissoes[host_sid]["tipo"] = data["type"]
 
-    print(f"📡 Transmissão ativa: {transmissao_id} para {sid}")
-
-    emit("transmissao_iniciada", {"id_transmissao": transmissao_id}, to=sid)
-
-
+    print(f"📡 Novo áudio sendo enviado para transmissão {id_transmissao} por {sid}")
+    emit("transmissao_atualizada", {"id_transmissao": id_transmissao}, room=id_transmissao)
+    
 @socketio.on("audio_chunk")
 def receber_pedaco(data):
     """Recebe um pedaço do áudio e o envia apenas para os clientes conectados à transmissão."""
@@ -79,14 +73,19 @@ def receber_pedaco(data):
     if not host_sid:
         return
 
+    total_pedacos = transmissoes[host_sid]["total_pedacos"]
+    
+    # Verifica se o pedaço está dentro do intervalo válido
+    if not (0 <= id_pedaco < total_pedacos):
+        print(f"⚠️ Pedaço {id_pedaco} está fora do intervalo válido (0 a {total_pedacos - 1}), ignorando...")
+        return
+
     # Evita reprocessar pedaços duplicados
     if id_pedaco in transmissoes[host_sid]["pedaços"]:
         print(f"⚠️ Pedaço {id_pedaco} já foi recebido, ignorando...")
         return
 
     transmissoes[host_sid]["pedaços"][id_pedaco] = chunk_data
-    total_pedacos = transmissoes[host_sid]["total_pedacos"]
-
     print(f"📥 Recebido pedaço {id_pedaco + 1}/{total_pedacos} da transmissão {id_transmissao}")
 
     emit("audio_processed", {
@@ -144,6 +143,15 @@ def controle_player(data):
 @app.route('/')
 def Rádio():
     return render_template('Rádio.html')
+
+#-------------------------------------------------------------------
+
+def cliente_pertence_transmissao(sid, id_transmissao):
+    """Verifica se o cliente pertence à transmissão especificada."""
+    for host_sid, info in transmissoes.items():
+        if info["id"] == id_transmissao and sid in info["clientes_prontos"]:
+            return True
+    return False
 
 #-------------------------------------------------------------------
 
