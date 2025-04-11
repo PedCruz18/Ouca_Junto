@@ -28,6 +28,9 @@ export let isSyncing = false;        // Flag que indica se está sincronizando
 export let isPlaying = false;        // Flag que indica se o áudio está tocando
 export const audioPlayer = document.getElementById('reprodutorAudio');  // Elemento de player de áudio
 
+window.conectarTransmissao = conectarTransmissao;
+window.sairTransmissao = sairTransmissao;
+
 // ------------------------------------------------------------------
 
 audioPlayer.addEventListener('play', () => {
@@ -112,9 +115,6 @@ window.enviarAudio = async function () {
 };
 
 // ------------------------------------------------------------------
-window.conectarTransmissao = conectarTransmissao;
-window.sairTransmissao = sairTransmissao;
-let isHost = false; // Define se o usuário é o transmissor
 
 function atualizarNavbar(id) {
     const conectarDiv = document.getElementById("conectar");
@@ -168,6 +168,8 @@ function sairTransmissao() {
     isHost = false;
     atualizarNavbar(null);
 }
+
+// ------------------------------------------------------------------
 
 // Quando o backend inicia uma transmissão e envia o ID
 socket.on("transmissao_iniciada", (data) => {
