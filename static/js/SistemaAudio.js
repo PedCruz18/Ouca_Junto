@@ -2,10 +2,10 @@
 import { tentarReproducao, sendControl } from './Interfaces.js';
 
 // Verifica se o script vai rodar em ambiente de produção ou desenvolvimento
-const isProduction = !["localhost", "127.0.0.1", "10.160.52.85"].includes(window.location.hostname);
+const isProduction = !["localhost", "127.0.0.1", "192.168.1.4"].includes(window.location.hostname);
 const SERVER_URL = isProduction 
     ? "https://ouca-junto.onrender.com"  // URL de produção
-    : "http://10.160.52.85:5000";  // URL local para desenvolvimento
+    : "http://192.168.1.4:5000";  // URL local para desenvolvimento
 
 // Configura o socket.io com opções de reconexão
 export const socket = io(SERVER_URL, {
@@ -69,6 +69,7 @@ window.enviarAudio = async function () {
 
     // Envia os metadados para iniciar a transmissão
     socket.emit("audio_metadata", {
+        id_transmissao: currentStreamId, 
         type: arquivo.type,
         totalChunks: totalPedaços
     });

@@ -1,10 +1,12 @@
 import random
+import time
 import eventlet
 eventlet.monkey_patch()
 from flask import Flask, render_template, request, jsonify
 from flask_socketio import SocketIO, emit, join_room
 from flask_cors import CORS
 import os
+import string
 
 #-------------------------------------------------------------------
 
@@ -23,7 +25,7 @@ socketio_config = {
 if os.getenv("RENDER", "false").lower() == "true":
     HOST, PORT, DEBUG_MODE = "0.0.0.0", int(os.environ.get("PORT", 10000)), False
 else:
-    HOST, PORT, DEBUG_MODE = "10.160.52.85", 5000, True
+    HOST, PORT, DEBUG_MODE = "192.168.1.4", 5000, True
 
 socketio = SocketIO(app, **socketio_config)
 
@@ -42,25 +44,69 @@ def obter_host(id_transmissao):
 
 @socketio.on("audio_metadata")
 def receber_metadata(data):
-    """Recebe os metadados do áudio de qualquer cliente na transmissão."""
+    """Recebe os metadados do áudio e gerencia a criação/associação de transmissões."""
     sid = request.sid
-    id_transmissao = data.get("id_transmissao")  # O cliente deve enviar o ID da transmissão
     
-    if not id_transmissao or not cliente_pertence_transmissao(sid, id_transmissao):
-        print(f"❌ Cliente {sid} não pertence à transmissão {id_transmissao}")
+    # Verificação básica dos dados recebidos
+    if not data or "type" not in data or "totalChunks" not in data:
+        print(f"❌ Dados incompletos recebidos de {sid}")
+        emit("erro_transmissao", {"mensagem": "Metadados incompletos"}, to=sid)
         return
 
+    # Caso 1: Cliente está iniciando uma NOVA transmissão
+    if "id_transmissao" not in data or not data["id_transmissao"]:
+        # Gera um ID de 5 caracteres aleatórios (letras e números)
+        caracteres = string.ascii_uppercase + string.digits  # A-Z e 0-9
+        id_transmissao = ''.join(random.choices(caracteres, k=5))
+        
+        # Garante que o ID é único
+        while any(info["id"] == id_transmissao for info in transmissoes.values()):
+            id_transmissao = ''.join(random.choices(caracteres, k=5))
+        
+        # Registra o host da transmissão
+        transmissoes[sid] = {
+            "id": id_transmissao,
+            "pedaços": {},
+            "clientes_prontos": [sid],  # O host é automaticamente adicionado
+            "total_pedacos": data["totalChunks"],
+            "tipo": data["type"],
+            "status": "iniciando"
+        }
+        
+        print(f"📡 Nova transmissão criada - ID: {id_transmissao} | Host: {sid}")
+        emit("transmissao_iniciada", {"id_transmissao": id_transmissao}, to=sid)
+        return
+
+    # Caso 2: Cliente está enviando para uma transmissão EXISTENTE
+    id_transmissao = data["id_transmissao"]
+    
+    # Verifica se a transmissão existe
     host_sid = obter_host(id_transmissao)
     if not host_sid:
+        print(f"❌ Transmissão {id_transmissao} não encontrada para o cliente {sid}")
+        emit("erro_transmissao", {"mensagem": "Transmissão não encontrada"}, to=sid)
         return
 
-    # Limpa os pedaços anteriores da transmissão
-    transmissoes[host_sid]["pedaços"].clear()
-    transmissoes[host_sid]["total_pedacos"] = data["totalChunks"]
-    transmissoes[host_sid]["tipo"] = data["type"]
+    # Verifica se o cliente tem permissão
+    if not cliente_pertence_transmissao(sid, id_transmissao):
+        print(f"❌ Cliente {sid} não autorizado na transmissão {id_transmissao}")
+        emit("erro_transmissao", {"mensagem": "Não autorizado"}, to=sid)
+        return
 
-    print(f"📡 Novo áudio sendo enviado para transmissão {id_transmissao} por {sid}")
-    emit("transmissao_atualizada", {"id_transmissao": id_transmissao}, room=id_transmissao)
+    # Atualiza os metadados da transmissão existente
+    transmissoes[host_sid].update({
+        "pedaços": {},
+        "total_pedacos": data["totalChunks"],
+        "tipo": data["type"],
+        "status": "recebendo_audio"
+    })
+
+    print(f"🔄 Transmissão {id_transmissao} atualizada por {sid}")
+    emit("transmissao_atualizada", {
+        "id_transmissao": id_transmissao,
+        "total_pedacos": data["totalChunks"],
+        "tipo": data["type"]
+    }, room=id_transmissao)
     
 @socketio.on("audio_chunk")
 def receber_pedaco(data):
@@ -153,6 +199,10 @@ def cliente_pertence_transmissao(sid, id_transmissao):
             return True
     return False
 
+def gerar_id_curto():
+    """Gera um ID de 5 caracteres alfanuméricos (letras maiúsculas e dígitos)"""
+    caracteres = string.ascii_uppercase + string.digits  # A-Z e 0-9
+    return ''.join(random.choice(caracteres) for _ in range(5))
 #-------------------------------------------------------------------
 
 if __name__ == '__main__':
