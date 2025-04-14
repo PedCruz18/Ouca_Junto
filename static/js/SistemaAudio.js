@@ -2,10 +2,10 @@
 import { tentarReproducao } from './Interfaces.js';
 
 // Verifica se o script está rodando em produção ou desenvolvimento
-const emProducao = !["localhost", "127.0.0.1"].includes(window.location.hostname);
+const emProducao = !["localhost", "10.160.52.85"].includes(window.location.hostname);
 const URL_SERVIDOR = emProducao 
     ? "https://ouca-junto.onrender.com"  // URL de produção
-    : "http://localhost:5000";            // URL local para desenvolvimento
+    : "http://10.160.52.85:5000";            // URL local para desenvolvimento
 
 // Configura o socket.io com opções de reconexão
 export const socket = io(URL_SERVIDOR, {
@@ -19,15 +19,45 @@ export const socket = io(URL_SERVIDOR, {
 
 // ------------------------------------------------------------------
 
+
+export const logger = {
+    log: (...args) => {
+      if (!emProducao) {
+        console.log(...args);
+      }
+    },
+    warn: (...args) => {
+      if (!emProducao) {
+        console.warn(...args);
+      }
+    },
+    error: (...args) => {
+      if (!emProducao) {
+        console.error(...args);
+      }
+    },
+    info: (...args) => {
+      if (!emProducao) {
+        console.info(...args);
+      }
+    },
+    debug: (...args) => {
+      if (!emProducao) {
+        console.debug(...args);
+      }
+    }
+  };
+
+// -------------------------------------------------------------------
 // Armazena os buffers de áudio das transmissões
 const buffersAudios = {};
 
 export let idTransmissaoAtual = null;
-console.log('ID da transmissão no frontend:', idTransmissaoAtual);
 export let estaSincronizando = false;
 export let estaTocando = false;
 export const reprodutorAudio = document.getElementById('reprodutorAudio');
 export let souAnfitriao = false;
+let ultimoSeekTime = 0;
 
 window.conectarComoOuvinte = conectarComoOuvinte;
 window.sairDaTransmissao = sairDaTransmissao;
@@ -35,27 +65,25 @@ window.sairDaTransmissao = sairDaTransmissao;
 // ------------------------------------------------------------------
 // Eventos do reprodutor de áudio
 reprodutorAudio.addEventListener('play', () => {
-    console.log('Evento: play acionado');
+    logger.log('Evento: play acionado');
     enviarControle('play');
 });
 
 reprodutorAudio.addEventListener('pause', () => {
-    console.log('Evento: pause acionado');
+    logger.log('Evento: pause acionado');
     enviarControle('pause');
 });
-
-let ultimoSeekTime = 0;
 
 reprodutorAudio.addEventListener('seeked', () => {
     const agora = Date.now();
     // Debounce: só processa seeks com >500ms de intervalo
     if (agora - ultimoSeekTime < 500) {
-        console.log("⏩ Seek ignorado (debounce)");
+        logger.log("⏩ Seek ignorado (debounce)");
         return;
     }
     ultimoSeekTime = agora;
 
-    console.log('⏭️ Seek para:', reprodutorAudio.currentTime);
+    logger.log('⏭️ Seek para:', reprodutorAudio.currentTime);
     
     if (!estaSincronizando && estaTocando) {
         enviarControle('seek', reprodutorAudio.currentTime);
