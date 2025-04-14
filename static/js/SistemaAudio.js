@@ -44,11 +44,21 @@ reprodutorAudio.addEventListener('pause', () => {
     enviarControle('pause');
 });
 
-reprodutorAudio.addEventListener('seeked', () => {
-    console.log('Evento: seeked na posição:', reprodutorAudio.currentTime);
+let ultimoSeekTime = 0;
 
-    if (!estaSincronizando) {
-        enviarControle('play');
+reprodutorAudio.addEventListener('seeked', () => {
+    const agora = Date.now();
+    // Debounce: só processa seeks com >500ms de intervalo
+    if (agora - ultimoSeekTime < 500) {
+        console.log("⏩ Seek ignorado (debounce)");
+        return;
+    }
+    ultimoSeekTime = agora;
+
+    console.log('⏭️ Seek para:', reprodutorAudio.currentTime);
+    
+    if (!estaSincronizando && estaTocando) {
+        enviarControle('seek', reprodutorAudio.currentTime);
     }
 });
 
@@ -163,18 +173,21 @@ function sairDaTransmissao() {
     atualizarNavbar(null);
 }
 
-export function enviarControle(acao) {
-    if (estaSincronizando || !idTransmissaoAtual || !estaTocando) return;
+export function enviarControle(acao, tempoEspecifico = null) {
+    if (estaSincronizando) {
+        console.log("🔄 Ignorando comando durante sincronização");
+        return;
+    }
 
-    console.log(`🔄 Enviando controle: ${acao} @ ${reprodutorAudio.currentTime}s para a transmissão ${idTransmissaoAtual}`);
+    const dados = {
+        action: acao,
+        currentTime: tempoEspecifico !== null ? tempoEspecifico : reprodutorAudio.currentTime,
+        id_transmissao: idTransmissaoAtual,
+        originador: socket.id // Identifica quem iniciou o comando
+    };
 
-    socket.emit('controle_player', {
-        acao: acao,
-        tempoAtual: reprodutorAudio.currentTime,
-        id_transmissao: idTransmissaoAtual
-    });
-
-    console.log(`Comando ${acao} enviado para o servidor!`);
+    console.log("📤 Enviando controle:", dados);
+    socket.emit('controle_player', dados);
 }
 
 // ------------------------------------------------------------------
@@ -250,36 +263,53 @@ socket.on('iniciar_reproducao', function(dados) {
 });
 
 socket.on('player_control', function (dados) {
-    console.log('🚨 Comando recebido:', dados);
-    try {
-        console.log(`🎮 Recebido controle: ${dados.action} @ ${dados.currentTime}s`);
+    // Ignora comandos do próprio usuário
+    if (dados.originador === socket.id) {
+        console.log("🔄 Comando próprio ignorado");
+        return;
+    }
 
-        if (!dados || !dados.action || dados.id_transmissao !== idTransmissaoAtual) {
-            console.log("⚠️ Ignorando controle, dados inválidos ou id de transmissão diferente.");
-            return;
+    // Validação reforçada
+    if (!validarComando(dados)) return;
+
+    console.log(`🎮 Controle externo: ${dados.action} @ ${dados.currentTime}s`);
+    
+    executarComandoSincronizado(dados);
+});
+
+function validarComando(dados) {
+    const COMANDOS_VALIDOS = ['play', 'pause', 'seek'];
+    return (
+        dados &&
+        COMANDOS_VALIDOS.includes(dados.action) &&
+        typeof dados.currentTime === 'number' &&
+        dados.id_transmissao === idTransmissaoAtual
+    );
+}
+
+function executarComandoSincronizado(dados) {
+    estaSincronizando = true;
+    
+    try {
+        // Sincroniza o tempo primeiro, independente do comando
+        if (Math.abs(reprodutorAudio.currentTime - dados.currentTime) > 0.5) {
+            reprodutorAudio.currentTime = dados.currentTime;
         }
 
-        // Aqui, podemos fazer a sincronização para todos os clientes
-        estaSincronizando = true;
-        reprodutorAudio.currentTime = dados.currentTime || 0;
-
-        if (dados.action === 'play') {
-            console.log(`🎶 Reproduzindo áudio...`);
-            reprodutorAudio.play().catch(e => console.error("Autoplay bloqueado:", e));
-        } else if (dados.action === 'pause') {
-            console.log(`⏸️ Pausando áudio...`);
+        // Executa a ação
+        if (dados.action === 'play' && reprodutorAudio.paused) {
+            reprodutorAudio.play().catch(e => console.error("Autoplay:", e));
+        } else if (dados.action === 'pause' && !reprodutorAudio.paused) {
             reprodutorAudio.pause();
         }
 
-        document.getElementById('status').innerText = 
-            `Controle: ${dados.action} @ ${dados.currentTime.toFixed(2)}s`;
-
-    } catch (e) {
-        console.error("Erro no controle:", e);
     } finally {
-        setTimeout(() => estaSincronizando = false, 100);
+        setTimeout(() => {
+            estaSincronizando = false;
+            console.log("🟢 Sincronização concluída");
+        }, 100);
     }
-});
+}
 
 socket.on("connect", () => {
     console.log("✅ Conectado ao servidor:", URL_SERVIDOR);
