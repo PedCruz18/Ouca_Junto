@@ -10,6 +10,7 @@ def init_sockets(socketio):
         sid = request.sid
         if not data or "type" not in data or "totalChunks" not in data:
             emit("erro_transmissao", {"mensagem": "Metadados incompletos"}, to=sid)
+            print(f"⚠️ Erro: Metadados incompletos recebidos de {sid}")
             return
 
         if "id_transmissao" not in data or not data["id_transmissao"]:
@@ -25,12 +26,14 @@ def init_sockets(socketio):
                 "tipo": data["type"],
                 "status": "iniciando"
             }
+            print(f"🔴 Transmissão iniciada com o ID {id_transmissao} para o cliente {sid}")
             emit("transmissao_iniciada", {"id_transmissao": id_transmissao}, to=sid)
             return
 
         id_transmissao = data["id_transmissao"]
         host_sid = obter_host(transmissoes, id_transmissao)
         if not host_sid or not cliente_pertence_transmissao(transmissoes, sid, id_transmissao):
+            print(f"⚠️ Cliente {sid} não autorizado ou transmissão inexistente para ID {id_transmissao}")
             emit("erro_transmissao", {"mensagem": "Não autorizado ou inexistente"}, to=sid)
             return
 
@@ -40,6 +43,7 @@ def init_sockets(socketio):
             "tipo": data["type"],
             "status": "recebendo_audio"
         })
+        print(f"📡 Transmissão {id_transmissao} atualizada - recebendo áudio")
         emit("transmissao_atualizada", data, room=id_transmissao)
 
     @socketio.on("audio_chunk")
@@ -70,9 +74,11 @@ def init_sockets(socketio):
         if not host_sid:
             return
 
+        print(f"🎉 Cliente {request.sid} pronto para a transmissão {id_transmissao}")
         join_room(id_transmissao)
         transmissoes[host_sid]["clientes_prontos"].append(request.sid)
 
+        # Enviando os pedaços de áudio para o novo cliente
         for chunk_id, chunk_data in transmissoes[host_sid]["pedaços"].items():
             emit("audio_processed", {
                 "id_transmissao": id_transmissao,
@@ -83,17 +89,24 @@ def init_sockets(socketio):
 
         emit("iniciar_reproducao", {"id_transmissao": id_transmissao}, to=request.sid)
 
-    @socketio.on("player_control")
+    @socketio.on("controle_player")
     def controle_player(data):
         id_transmissao = data.get("id_transmissao")
-        action = data.get("action")
-        current_time = data.get("currentTime", 0)
+        acao = data.get("action")
+        tempo_atual = data.get("currentTime", 0) 
 
         if not obter_host(transmissoes, id_transmissao):
+            print(f"⚠️ Falha: Não encontrado host para a transmissão {id_transmissao}")
             return
 
-        emit("player_control", {
+        print(f"🔄 Enviando comando {acao} para a transmissão {id_transmissao} (Tempo: {tempo_atual}s)")
+
+        # Emitindo para todos os clientes da sala
+        emit("player_control", { 
             "id_transmissao": id_transmissao,
-            "action": action,
-            "currentTime": current_time
+            "action": acao, 
+            "currentTime": tempo_atual 
         }, room=id_transmissao)
+
+        print(f"✅ Comando {acao} enviado com sucesso para todos os clientes da transmissão {id_transmissao}")
+

@@ -9,7 +9,7 @@
 </head>
 <body>
 
-    <!-- Navbar -------->
+    <!-- Navbar -->
     <nav class="navbar">
         <div class="navbar-container">
             <a href="#" class="navbar-brand">OuçaJunto<span class="brand-dot">.</span></a>
@@ -22,13 +22,13 @@
                 <!-- Campo para conectar-se a uma transmissão -->
                 <div id="conectar">
                     <input type="text" id="idTransmissao" placeholder="Digite o ID da Transmissão">
-                    <button onclick="conectarTransmissao()">Conectar</button>
+                    <button onclick="conectarComoOuvinte()">Conectar</button>
                 </div>
 
                 <!-- Exibição do ID da sala com botão de saída (inicialmente oculto) -->
                 <div id="salaInfo" style="display: none; align-items: center;">
                     <span id="idSala" style="margin-right: 10px; font-weight: bold;"></span>
-                    <button onclick="sairTransmissao()" style="background: red; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer;">Sair</button>
+                    <button onclick="sairDaTransmissao()" style="background: red; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer;">Sair</button>
                 </div>
             </ul>
         </div>
@@ -43,7 +43,7 @@
         <audio id="reprodutorAudio" controls></audio>
 
         <!-- Botão para abrir/fechar o menu suspenso -->
-        <button class="toggle-menu" onclick="toggleMenu()">
+        <button class="toggle-menu" onclick="alternarMenu()">
             <i class="fas fa-chevron-down"></i> <!-- Ícone da seta -->
         </button>
     

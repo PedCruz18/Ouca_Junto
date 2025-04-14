@@ -1,67 +1,67 @@
-// Imports de Interfaces
-import { tentarReproducao, sendControl } from './Interfaces.js';
+// Imports das Interfaces
+import { tentarReproducao } from './Interfaces.js';
 
-// Verifica se o script vai rodar em ambiente de produção ou desenvolvimento
-const isProduction = !["localhost", "127.0.0.1"].includes(window.location.hostname);
-const SERVER_URL = isProduction 
+// Verifica se o script está rodando em produção ou desenvolvimento
+const emProducao = !["localhost", "127.0.0.1"].includes(window.location.hostname);
+const URL_SERVIDOR = emProducao 
     ? "https://ouca-junto.onrender.com"  // URL de produção
-    : "http://localhost:5000";  // URL local para desenvolvimento
+    : "http://localhost:5000";            // URL local para desenvolvimento
 
 // Configura o socket.io com opções de reconexão
-export const socket = io(SERVER_URL, {
-    transports: ["websocket", "polling"],  // Permite fallback para polling
-    secure: isProduction,  // Habilita SSL em produção
-    withCredentials: true, // Para CORS em alguns servidores
-    reconnection: true,  // Habilita reconexão automática
-    reconnectionAttempts: 5,  // Limita a 5 tentativas de reconexão
-    reconnectionDelay: 2000  // Intervalo de 2 segundos entre as tentativas de reconexão
+export const socket = io(URL_SERVIDOR, {
+    transports: ["websocket", "polling"],
+    secure: emProducao,
+    withCredentials: true,
+    reconnection: true,
+    reconnectionAttempts: 5,
+    reconnectionDelay: 2000
 });
 
 // ------------------------------------------------------------------
 
-// Armazena os buffers de áudio de diferentes transmissões
-const buffersAudio = {};  
+// Armazena os buffers de áudio das transmissões
+const buffersAudios = {};
 
-// Variáveis para controle da sincronização e do estado do player
-export let currentStreamId = null;  // ID da transmissão atual
-export let isSyncing = false;        // Flag que indica se está sincronizando
-export let isPlaying = false;        // Flag que indica se o áudio está tocando
-export const audioPlayer = document.getElementById('reprodutorAudio');  // Elemento de player de áudio
-export let isHost = false;   
+export let idTransmissaoAtual = null;
+console.log('ID da transmissão no frontend:', idTransmissaoAtual);
+export let estaSincronizando = false;
+export let estaTocando = false;
+export const reprodutorAudio = document.getElementById('reprodutorAudio');
+export let souAnfitriao = false;
 
-window.conectarTransmissao = conectarTransmissao;
-window.sairTransmissao = sairTransmissao;
+window.conectarComoOuvinte = conectarComoOuvinte;
+window.sairDaTransmissao = sairDaTransmissao;
 
 // ------------------------------------------------------------------
-
-audioPlayer.addEventListener('play', () => {
+// Eventos do reprodutor de áudio
+reprodutorAudio.addEventListener('play', () => {
     console.log('Evento: play acionado');
-    sendControl('play');
+    enviarControle('play');
 });
 
-audioPlayer.addEventListener('pause', () => {
+reprodutorAudio.addEventListener('pause', () => {
     console.log('Evento: pause acionado');
-    sendControl('pause');
+    enviarControle('pause');
 });
 
-audioPlayer.addEventListener('seeked', () => {
-    console.log('Evento: seeked acionado na posição:', audioPlayer.currentTime);
-    
-    if (!isSyncing) {  // ✅ Evita enviar comandos em loop
-        sendControl('play'); 
+reprodutorAudio.addEventListener('seeked', () => {
+    console.log('Evento: seeked na posição:', reprodutorAudio.currentTime);
+
+    if (!estaSincronizando) {
+        enviarControle('play');
     }
 });
 
 // ------------------------------------------------------------------
-
+// Envio de arquivo de áudio
 window.enviarAudio = async function () {
-    const entradaArquivo = document.getElementById("arquivoAudio");
-    const arquivo = entradaArquivo.files[0];
+    const entrada = document.getElementById("arquivoAudio");
+    const arquivo = entrada.files[0];
 
-    window.toggleMenu();
+    window.alternarMenu();
 
     if (!arquivo) {
-        console.warn("⚠️ Nenhum arquivo selecionado para envio.");
+        console.warn("⚠️ Nenhum arquivo selecionado.");
         return;
     }
 
@@ -69,28 +69,23 @@ window.enviarAudio = async function () {
 
     const tamanhoPedaco = 1024 * 512;
     const totalPedaços = Math.ceil(arquivo.size / tamanhoPedaco);
-    console.log(`🔄 Total de pedaços a serem enviados: ${totalPedaços}`);
+    console.log(`🔄 Total de pedaços a enviar: ${totalPedaços}`);
 
-    // Envia os metadados para iniciar a transmissão
     socket.emit("audio_metadata", {
-        id_transmissao: currentStreamId, 
+        id_transmissao: idTransmissaoAtual, 
         type: arquivo.type,
         totalChunks: totalPedaços
     });
-    console.log("📤 Metadados enviados:", { type: arquivo.type, totalChunks: totalPedaços });
 
-    // 🔴 Aguarda o ID da transmissão
-    while (!currentStreamId) {
+    while (!idTransmissaoAtual) {
         console.log("⏳ Aguardando ID da transmissão...");
-        await new Promise((resolve) => setTimeout(resolve, 100));
+        await new Promise(res => setTimeout(res, 100));
     }
 
-    // ✅ **AUTOCONECTA** o cliente que enviou o áudio à transmissão
-    console.log(`🎧 Conectando automaticamente à transmissão ${currentStreamId}...`);
-    socket.emit("cliente_pronto", { id_transmissao: currentStreamId });
-    document.getElementById("status").innerText = `🔄 Aguardando áudio da transmissão ${currentStreamId}...`;
+    console.log(`🎧 Conectando automaticamente à transmissão ${idTransmissaoAtual}...`);
+    socket.emit("cliente_pronto", { id_transmissao: idTransmissaoAtual });
+    document.getElementById("status").innerText = `🔄 Aguardando áudio da transmissão ${idTransmissaoAtual}...`;
 
-    // Envio dos pedaços do áudio
     for (let i = 0; i < totalPedaços; i++) {
         const inicio = i * tamanhoPedaco;
         const fim = Math.min(inicio + tamanhoPedaco, arquivo.size);
@@ -100,7 +95,7 @@ window.enviarAudio = async function () {
             const leitor = new FileReader();
             leitor.onload = function (e) {
                 socket.emit("audio_chunk", {
-                    id_transmissao: currentStreamId,
+                    id_transmissao: idTransmissaoAtual,
                     chunkId: i,
                     data: e.target.result
                 });
@@ -111,183 +106,189 @@ window.enviarAudio = async function () {
         });
     }
 
-    entradaArquivo.value = "";
-    console.log("✅ Envio de áudio completo");
+    entrada.value = "";
+    console.log("✅ Envio de áudio finalizado");
 };
 
 // ------------------------------------------------------------------
-
+// Atualiza o rodapé com o ID da sala
 function atualizarNavbar(id) {
-    const conectarDiv = document.getElementById("conectar");
-    const salaInfoDiv = document.getElementById("salaInfo");
-    const idSalaElemento = document.getElementById("idSala");
+    const divConectar = document.getElementById("conectar");
+    const divInfoSala = document.getElementById("salaInfo");
+    const spanIdSala = document.getElementById("idSala");
 
     if (id) {
-        // Se há um ID, esconde o campo de conexão e exibe os detalhes da sala
-        conectarDiv.style.display = "none";
-        salaInfoDiv.style.display = "flex";
-        idSalaElemento.innerText = `Sala: ${id}`;
+        divConectar.style.display = "none";
+        divInfoSala.style.display = "flex";
+        spanIdSala.innerText = `Sala: ${id}`;
     } else {
-        // Se não há ID, exibe o campo de conexão novamente
-        conectarDiv.style.display = "flex";
-        salaInfoDiv.style.display = "none";
+        divConectar.style.display = "flex";
+        divInfoSala.style.display = "none";
     }
 }
 
-// Conectar como ouvinte
-function conectarTransmissao() {
+// Conecta como ouvinte
+function conectarComoOuvinte() {
     const input = document.getElementById("idTransmissao");
-    const idTransmissao = input.value.trim();
+    const id = input.value.trim();
 
-    if (!idTransmissao) {
-        alert("⚠️ Por favor, digite um ID de transmissão válido.");
+    if (!id) {
+        alert("⚠️ Por favor, insira um ID de transmissão.");
         return;
     }
 
-    currentStreamId = idTransmissao;
-    console.log(`🎧 Conectando à transmissão ${currentStreamId}...`);
-    socket.emit("cliente_pronto", { id_transmissao: currentStreamId });
+    idTransmissaoAtual = id;
+    console.log(`🎧 Conectando à transmissão ${idTransmissaoAtual}...`);
+    socket.emit("cliente_pronto", { id_transmissao: idTransmissaoAtual });
 
-    atualizarNavbar(currentStreamId);
+    atualizarNavbar(idTransmissaoAtual);
     input.value = "";
 }
 
-// Sair da transmissão (para ouvintes e hosts)
-function sairTransmissao() {
-    if (!currentStreamId) return;
+// Sai da transmissão
+function sairDaTransmissao() {
+    if (!idTransmissaoAtual) return;
 
     console.log("🚪 Saindo da transmissão...");
-    socket.emit("sair_transmissao", { id_transmissao: currentStreamId });
+    socket.emit("sair_transmissao", { id_transmissao: idTransmissaoAtual });
 
-    // Reseta o player de áudio
-    audioPlayer.pause();
-    audioPlayer.src = "";
-    audioPlayer.load(); // Garante que o player seja resetado completamente
+    reprodutorAudio.pause();
+    reprodutorAudio.src = "";
+    reprodutorAudio.load();
+
     document.getElementById('status').innerText = "🔇 Nenhuma transmissão ativa";
 
-    currentStreamId = null;
-    isHost = false;
+    idTransmissaoAtual = null;
+    souAnfitriao = false;
     atualizarNavbar(null);
 }
 
+export function enviarControle(acao) {
+    if (estaSincronizando || !idTransmissaoAtual || !estaTocando) return;
+
+    console.log(`🔄 Enviando controle: ${acao} @ ${reprodutorAudio.currentTime}s para a transmissão ${idTransmissaoAtual}`);
+
+    socket.emit('controle_player', {
+        acao: acao,
+        tempoAtual: reprodutorAudio.currentTime,
+        id_transmissao: idTransmissaoAtual
+    });
+
+    console.log(`Comando ${acao} enviado para o servidor!`);
+}
+
 // ------------------------------------------------------------------
+// Eventos do socket
 
-// Quando o backend inicia uma transmissão e envia o ID
-socket.on("transmissao_iniciada", (data) => {
-    currentStreamId = data.id_transmissao;
-    console.log("📡 Nova transmissão iniciada! ID:", currentStreamId);
-
-    // Atualiza o rodapé com o ID da sala
-    atualizarNavbar(currentStreamId);
+socket.on("transmissao_iniciada", (dados) => {
+    idTransmissaoAtual = dados.id_transmissao;
+    console.log("📡 Transmissão iniciada! ID:", idTransmissaoAtual);
+    atualizarNavbar(idTransmissaoAtual);
 });
 
 socket.on('audio_processed', function(dados) {
     const id = dados.id_transmissao;
 
-    // Verifica se o buffer de áudio existe para esse ID
-    if (!buffersAudio[id]) {
-        buffersAudio[id] = {
-            pedaços: new Array(dados.total_pedaços).fill(null), // Inicializa com null para todos os pedaços
+    if (!buffersAudios[id]) {
+        buffersAudios[id] = {
+            pedaços: new Array(dados.total_pedaços).fill(null),
             recebidos: 0,
             total: dados.total_pedaços
         };
     }
 
-    // Verifica se o pedaço já foi recebido
-    if (buffersAudio[id].pedaços[dados.id_pedaco] !== null) {
+    if (buffersAudios[id].pedaços[dados.id_pedaco] !== null) {
         console.warn(`⚠️ Pedaço ${dados.id_pedaco} já recebido, ignorando...`);
-        return; // Ignora o pedaço duplicado
+        return;
     }
 
     document.getElementById('status').innerText = 
         `📥 Recebendo pedaço ${dados.id_pedaco + 1} de ${dados.total_pedaços}`;
 
-    // Armazena o pedaço no buffer
-    buffersAudio[id].pedaços[dados.id_pedaco] = dados.dados;
-    buffersAudio[id].recebidos++;
+    buffersAudios[id].pedaços[dados.id_pedaco] = dados.dados;
+    buffersAudios[id].recebidos++;
 
-    console.log(`✅ Pedaço ${dados.id_pedaco} armazenado (${buffersAudio[id].recebidos}/${dados.total_pedaços})`);
+    console.log(`✅ Pedaço ${dados.id_pedaco} armazenado (${buffersAudios[id].recebidos}/${dados.total_pedaços})`);
 
-    // Se todos os pedaços foram recebidos, monta o áudio
-    if (buffersAudio[id].recebidos === buffersAudio[id].total) {
+    if (buffersAudios[id].recebidos === buffersAudios[id].total) {
         console.log("📦 Todos os pedaços recebidos, montando áudio...");
 
-        if (buffersAudio[id].pedaços.includes(null)) {
+        if (buffersAudios[id].pedaços.includes(null)) {
             console.error("❌ Erro: Alguns pedaços estão faltando!");
             return;
         }
 
-        const blobAudio = new Blob(buffersAudio[id].pedaços, { type: 'audio/*' });
+        const blobAudio = new Blob(buffersAudios[id].pedaços, { type: 'audio/*' });
         const urlAudio = URL.createObjectURL(blobAudio);
 
         console.log("🎵 Áudio montado com sucesso!");
 
-        audioPlayer.src = urlAudio;
-        audioPlayer.onloadedmetadata = () => {
-            document.getElementById('status').innerText = "🎵 Áudio pronto para reprodução!";
-            console.log("🟢 Tentando reproduzir áudio...");
-            audioPlayer.play().catch(err => {
-                console.warn("🔴 Falha ao iniciar reprodução automática:", err);
+        reprodutorAudio.src = urlAudio;
+        reprodutorAudio.onloadedmetadata = () => {
+            document.getElementById('status').innerText = "🎵 Áudio pronto!";
+            console.log("🟢 Tentando reproduzir...");
+            reprodutorAudio.play().catch(err => {
+                console.warn("🔴 Falha na reprodução automática:", err);
                 document.getElementById('status').innerText = "Clique para reproduzir!";
             });
         };
 
-        // Resetar o buffer após o áudio ser montado e tocado
         setTimeout(() => {
-            console.log("🧹 Limpando buffer de áudio após reprodução...");
-            delete buffersAudio[id]; // Limpa o buffer após o processamento completo
-        }, 1000); // Espera 1 segundo antes de limpar o buffer, para garantir que o áudio comece a ser reproduzido
-
+            console.log("🧹 Limpando buffer...");
+            delete buffersAudios[id];
+        }, 1000);
     }
 });
 
-// Tenta iniciar a reprodução sincronizada
-socket.on('iniciar_reproducao', function(data) {
-    if (data.id_transmissao === currentStreamId) {
-        isPlaying = true;
-        audioPlayer.currentTime = 0;
-        tentarReproducao();  // Ativa a reprodução na interface
+socket.on('iniciar_reproducao', function(dados) {
+    if (dados.id_transmissao === idTransmissaoAtual) {
+        estaTocando = true;
+        reprodutorAudio.currentTime = 0;
+        tentarReproducao();
         document.getElementById('status').innerText = "Reproduzindo sincronizado!";
     }
 });
 
-socket.on('player_control', function(data) {
+socket.on('player_control', function (dados) {
+    console.log('🚨 Comando recebido:', dados);
     try {
-        if (!data || !data.action || data.id_transmissao !== currentStreamId) {
+        console.log(`🎮 Recebido controle: ${dados.action} @ ${dados.currentTime}s`);
+
+        if (!dados || !dados.action || dados.id_transmissao !== idTransmissaoAtual) {
+            console.log("⚠️ Ignorando controle, dados inválidos ou id de transmissão diferente.");
             return;
         }
 
-        console.log(`Recebido ${data.action} @ ${data.currentTime}s`);
+        // Aqui, podemos fazer a sincronização para todos os clientes
+        estaSincronizando = true;
+        reprodutorAudio.currentTime = dados.currentTime || 0;
 
-        isSyncing = true;  // 🔹 Evita loops de atualização
-        audioPlayer.currentTime = data.currentTime || 0;  // 🔹 Atualiza o tempo exato antes de reproduzir
-        
-        if (data.action === 'play') {
-            audioPlayer.play().catch(e => console.error("Autoplay bloqueado:", e));
-        } else {
-            audioPlayer.pause();
+        if (dados.action === 'play') {
+            console.log(`🎶 Reproduzindo áudio...`);
+            reprodutorAudio.play().catch(e => console.error("Autoplay bloqueado:", e));
+        } else if (dados.action === 'pause') {
+            console.log(`⏸️ Pausando áudio...`);
+            reprodutorAudio.pause();
         }
 
         document.getElementById('status').innerText = 
-            `Controle: ${data.action} @ ${data.currentTime.toFixed(2)}s`;
+            `Controle: ${dados.action} @ ${dados.currentTime.toFixed(2)}s`;
 
     } catch (e) {
-        console.error("Erro no handler de controle:", e);
+        console.error("Erro no controle:", e);
     } finally {
-        setTimeout(() => isSyncing = false, 100);  // 🔹 Pequeno atraso para garantir sincronização
+        setTimeout(() => estaSincronizando = false, 100);
     }
 });
 
-// ------------------------------------------------------------------
-
 socket.on("connect", () => {
-    console.log("✅ Conectado ao servidor:", SERVER_URL);
+    console.log("✅ Conectado ao servidor:", URL_SERVIDOR);
 });
 
-socket.on("connect_error", (err) => {
-    console.error("❌ Erro de conexão:", err.message);
+socket.on("connect_error", (erro) => {
+    console.error("❌ Erro de conexão:", erro.message);
 });
 
-socket.on("disconnect", (reason) => {
-    console.warn("⚠️ Desconectado do servidor:", reason);
+socket.on("disconnect", (motivo) => {
+    console.warn("⚠️ Desconectado do servidor:", motivo);
 });
