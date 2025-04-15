@@ -65,12 +65,10 @@ window.sairDaTransmissao = sairDaTransmissao;
 // ------------------------------------------------------------------
 // Eventos do reprodutor de áudio
 reprodutorAudio.addEventListener('play', () => {
-    logger.log('Evento: play acionado');
     enviarControle('play');
 });
 
 reprodutorAudio.addEventListener('pause', () => {
-    logger.log('Evento: pause acionado');
     enviarControle('pause');
 });
 
@@ -78,7 +76,6 @@ reprodutorAudio.addEventListener('seeked', () => {
     const agora = Date.now();
     // Debounce: só processa seeks com >500ms de intervalo
     if (agora - ultimoSeekTime < 500) {
-        logger.log("⏩ Seek ignorado (debounce)");
         return;
     }
     ultimoSeekTime = agora;
@@ -292,10 +289,9 @@ socket.on('audio_metadata', function(dados) {
 });
 
 socket.on('audio_processed', function(dados) {
-
     const id = dados.id_transmissao;
     const id_pedaco = dados.id_pedaco;
-    const dadosPedaço = dados.dados;
+    const dadosPedaco = dados.dados;
 
     // Verifica se o ID da transmissão é válido
     if (!id || id !== idTransmissaoAtual) {
@@ -308,6 +304,11 @@ socket.on('audio_processed', function(dados) {
     if (totalPedacos === undefined || totalPedacos <= 0) {
         console.error("❌ total_pedacos não definido ou inválido.");
         return;
+    }
+
+    // Cria um grupo colapsado para os pedaços recebidos (se for o primeiro pedaço)
+    if (id_pedaco === 0) {
+        console.groupCollapsed(`📥 Recebendo ${totalPedacos} pedaços (Transmissão ${id})`);
     }
 
     // Se for o primeiro pedaço, reinicia o buffer
@@ -334,17 +335,19 @@ socket.on('audio_processed', function(dados) {
         buffer.recebidos++;
     }
 
-    buffer.pedacos[id_pedaco] = dadosPedaço;
+    buffer.pedacos[id_pedaco] = dadosPedaco;
 
-    console.log(`✅ Pedaço ${id_pedaco} armazenado. (${buffer.recebidos}/${buffer.total})`);
+    // Log do pedaço recebido (dentro do grupo)
+    console.log(`✅ Pedaço ${id_pedaco + 1}/${buffer.total} (${dadosPedaco.byteLength} bytes)`);
 
     // Atualiza o status de progresso dinamicamente
     document.getElementById('status').innerText = 
         `📥 Recebendo pedaço ${buffer.recebidos} de ${buffer.total}`;
 
-    // Se todos os pedaços foram recebidos, monta o áudio
+    // Se todos os pedaços foram recebidos, monta o áudio e fecha o grupo
     if (buffer.recebidos === buffer.total) {
         console.log("📦 Todos os pedaços recebidos, montando áudio...");
+        console.groupEnd(); // Fecha o grupo de recebimento
 
         // Verifica se algum pedaço está faltando
         if (buffer.pedacos.includes(null)) {
@@ -356,13 +359,12 @@ socket.on('audio_processed', function(dados) {
         const blobAudio = new Blob(buffer.pedacos, { type: 'audio/*' });
         const urlAudio = URL.createObjectURL(blobAudio);
 
-        console.log("🎵 Áudio montado com sucesso!");
+        console.log("🎵🟢 Áudio montado com sucesso, Tentando reproduzir...");
 
         // Configura o reprodutor de áudio
         reprodutorAudio.src = urlAudio;
         reprodutorAudio.onloadedmetadata = () => {
             document.getElementById('status').innerText = "🎵 Áudio pronto!";
-            console.log("🟢 Tentando reproduzir...");
             reprodutorAudio.play().catch(err => {
                 console.warn("🔴 Falha na reprodução automática:", err);
                 document.getElementById('status').innerText = "Clique para reproduzir!";
