@@ -106,13 +106,13 @@ window.enviarAudio = async function () {
     document.getElementById("status").innerText = "Preparando envio...";
 
     const tamanhoPedaco = 1024 * 512;
-    const totalPedaços = Math.ceil(arquivo.size / tamanhoPedaco);
-    console.log(`🔄 Total de pedaços a enviar: ${totalPedaços}`);
+    const totalpedacos = Math.ceil(arquivo.size / tamanhoPedaco);
+    console.log(`🔄 Total de pedacos a enviar: ${totalpedacos}`);
 
     socket.emit("audio_metadata", {
         id_transmissao: idTransmissaoAtual, 
         type: arquivo.type,
-        totalChunks: totalPedaços
+        totalChunks: totalpedacos
     });
 
     while (!idTransmissaoAtual) {
@@ -124,7 +124,7 @@ window.enviarAudio = async function () {
     socket.emit("cliente_pronto", { id_transmissao: idTransmissaoAtual });
     document.getElementById("status").innerText = `🔄 Aguardando áudio da transmissão ${idTransmissaoAtual}...`;
 
-    for (let i = 0; i < totalPedaços; i++) {
+    for (let i = 0; i < totalpedacos; i++) {
         const inicio = i * tamanhoPedaco;
         const fim = Math.min(inicio + tamanhoPedaco, arquivo.size);
         const pedaco = arquivo.slice(inicio, fim);
@@ -137,7 +137,7 @@ window.enviarAudio = async function () {
                     chunkId: i,
                     data: e.target.result
                 });
-                console.log(`📦 Pedaço ${i + 1}/${totalPedaços} enviado (${fim - inicio} bytes)`);
+                console.log(`📦 Pedaço ${i + 1}/${totalpedacos} enviado (${fim - inicio} bytes)`);
                 resolve();
             };
             leitor.readAsArrayBuffer(pedaco);
@@ -232,34 +232,34 @@ socket.on('audio_processed', function(dados) {
 
     if (!buffersAudios[id]) {
         buffersAudios[id] = {
-            pedaços: new Array(dados.total_pedaços).fill(null),
+            pedacos: new Array(dados.total_pedacos).fill(null),
             recebidos: 0,
-            total: dados.total_pedaços
+            total: dados.total_pedacos
         };
     }
 
-    if (buffersAudios[id].pedaços[dados.id_pedaco] !== null) {
+    if (buffersAudios[id].pedacos[dados.id_pedaco] !== null) {
         console.warn(`⚠️ Pedaço ${dados.id_pedaco} já recebido, ignorando...`);
         return;
     }
 
     document.getElementById('status').innerText = 
-        `📥 Recebendo pedaço ${dados.id_pedaco + 1} de ${dados.total_pedaços}`;
+        `📥 Recebendo pedaço ${dados.id_pedaco + 1} de ${dados.total_pedacos}`;
 
-    buffersAudios[id].pedaços[dados.id_pedaco] = dados.dados;
+    buffersAudios[id].pedacos[dados.id_pedaco] = dados.dados;
     buffersAudios[id].recebidos++;
 
-    console.log(`✅ Pedaço ${dados.id_pedaco} armazenado (${buffersAudios[id].recebidos}/${dados.total_pedaços})`);
+    console.log(`✅ Pedaço ${dados.id_pedaco} armazenado (${buffersAudios[id].recebidos}/${dados.total_pedacos})`);
 
     if (buffersAudios[id].recebidos === buffersAudios[id].total) {
-        console.log("📦 Todos os pedaços recebidos, montando áudio...");
+        console.log("📦 Todos os pedacos recebidos, montando áudio...");
 
-        if (buffersAudios[id].pedaços.includes(null)) {
-            console.error("❌ Erro: Alguns pedaços estão faltando!");
+        if (buffersAudios[id].pedacos.includes(null)) {
+            console.error("❌ Erro: Alguns pedacos estão faltando!");
             return;
         }
 
-        const blobAudio = new Blob(buffersAudios[id].pedaços, { type: 'audio/*' });
+        const blobAudio = new Blob(buffersAudios[id].pedacos, { type: 'audio/*' });
         const urlAudio = URL.createObjectURL(blobAudio);
 
         console.log("🎵 Áudio montado com sucesso!");

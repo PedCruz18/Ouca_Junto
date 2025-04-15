@@ -22,7 +22,7 @@ def init_sockets(socketio):
 
             transmissoes[sid] = {
                 "id": id_transmissao,
-                "pedaços": {},
+                "pedacos": {},
                 "clientes_prontos": [sid],
                 "total_pedacos": data["totalChunks"],
                 "tipo": data["type"],
@@ -40,7 +40,7 @@ def init_sockets(socketio):
             return
 
         transmissoes[host_sid].update({
-            "pedaços": {},
+            "pedacos": {},
             "total_pedacos": data["totalChunks"],
             "tipo": data["type"],
             "status": "recebendo_audio"
@@ -58,14 +58,14 @@ def init_sockets(socketio):
         if not host_sid or id_pedaco is None:
             return
 
-        if id_pedaco in transmissoes[host_sid]["pedaços"]:
+        if id_pedaco in transmissoes[host_sid]["pedacos"]:
             return
 
-        transmissoes[host_sid]["pedaços"][id_pedaco] = chunk_data
+        transmissoes[host_sid]["pedacos"][id_pedaco] = chunk_data
         emit("audio_processed", {
             "id_transmissao": id_transmissao,
             "id_pedaco": id_pedaco,
-            "total_pedaços": transmissoes[host_sid]["total_pedacos"],
+            "total_pedacos": transmissoes[host_sid]["total_pedacos"],
             "dados": chunk_data
         }, room=id_transmissao)
 
@@ -88,11 +88,11 @@ def init_sockets(socketio):
         emit("audio_metadata", {
             "id_transmissao": id_transmissao,
             "type": transmissoes[host_sid]["tipo"],
-            "total_pedaços": transmissoes[host_sid]["total_pedacos"]
+            "total_pedacos": transmissoes[host_sid]["total_pedacos"]
         }, to=request.sid)
 
-        # 3. Envia pedaços prioritários (primeiros 10% para buffer inicial)
-        pedacos = list(transmissoes[host_sid]["pedaços"].items())
+        # 3. Envia pedacos prioritários (primeiros 10% para buffer inicial)
+        pedacos = list(transmissoes[host_sid]["pedacos"].items())
         primeiros_pedacos = pedacos[:int(len(pedacos) * 0.1)]
         
         for chunk_id, chunk_data in primeiros_pedacos:
@@ -100,10 +100,10 @@ def init_sockets(socketio):
                 "id_transmissao": id_transmissao,
                 "id_pedaco": chunk_id,
                 "dados": chunk_data,
-                "priority": True  # Sinaliza que são pedaços prioritários
+                "priority": True  # Sinaliza que são pedacos prioritários
             }, to=request.sid)
 
-        # 4. Envia o restante dos pedaços
+        # 4. Envia o restante dos pedacos
         for chunk_id, chunk_data in pedacos[int(len(pedacos) * 0.1):]:
             emit("audio_processed", {
                 "id_transmissao": id_transmissao,

@@ -1,10 +1,6 @@
 // Imports do Sistema de Áudio
 import {
- estaSincronizando,
  reprodutorAudio,
- idTransmissaoAtual,
- estaTocando,
- socket,
 } from "./SistemaAudio.js";
 
 // ---------------------------------------------------------------------------
