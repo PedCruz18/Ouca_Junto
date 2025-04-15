@@ -2,10 +2,10 @@
 import { tentarReproducao } from './Interfaces.js';
 
 // Verifica se o script está rodando em produção ou desenvolvimento
-const emProducao = !["localhost", "192.168.1.3"].includes(window.location.hostname);
+const emProducao = !["localhost", "10.160.52.85"].includes(window.location.hostname);
 const URL_SERVIDOR = emProducao 
     ? "https://ouca-junto.onrender.com"  // URL de produção
-    : "http://192.168.1.3:5000";            // URL local para desenvolvimento
+    : "http://10.160.52.85:5000";            // URL local para desenvolvimento
 
 // Configura o socket.io com opções de reconexão
 export const socket = io(URL_SERVIDOR, {
@@ -50,6 +50,7 @@ export const logger = {
 // -------------------------------------------------------------------
 // Armazena os buffers de áudio das transmissões
 const buffersAudios = {};
+const totalPedacosPorTransmissao = {};
 
 export let idTransmissaoAtual = null;
 export let estaSincronizando = false;
@@ -81,8 +82,6 @@ reprodutorAudio.addEventListener('seeked', () => {
         return;
     }
     ultimoSeekTime = agora;
-
-    logger.log('⏭️ Seek para:', reprodutorAudio.currentTime);
     
     if (!estaSincronizando && estaTocando) {
         enviarControle('seek', reprodutorAudio.currentTime);
@@ -119,7 +118,6 @@ window.enviarAudio = async function () {
         await new Promise(res => setTimeout(res, 100)); // Aguarda até o ID estar disponível
     }
 
-    console.log(`🎧 Conectando automaticamente à transmissão ${idTransmissaoAtual}...`);
     socket.emit("cliente_pronto", { id_transmissao: idTransmissaoAtual });
     document.getElementById("status").innerText = `🔄 Aguardando áudio da transmissão ${idTransmissaoAtual}...`;
 
@@ -223,17 +221,43 @@ export function enviarControle(acao, tempoEspecifico = null) {
     socket.emit('controle_player', dados);
 }
 
+function validarComando(dados) {
+    const COMANDOS_VALIDOS = ['play', 'pause', 'seek'];
+    return (
+        dados &&
+        COMANDOS_VALIDOS.includes(dados.action) &&
+        typeof dados.currentTime === 'number' &&
+        dados.id_transmissao === idTransmissaoAtual
+    );
+}
+
+function executarComandoSincronizado(dados) {
+    estaSincronizando = true;
+    
+    try {
+        // Sincroniza o tempo primeiro
+        reprodutorAudio.currentTime = dados.currentTime;
+        
+        // Executa a ação (play/pause)
+        if (dados.action === 'play') {
+            reprodutorAudio.play();
+        } else if (dados.action === 'pause') {
+            reprodutorAudio.pause();
+        }
+    } catch (error) {
+        console.error("❌ Erro na sincronização do comando:", error);
+    }
+
+    estaSincronizando = false;
+}
 // ------------------------------------------------------------------
 // Eventos do socket
 
 socket.on("transmissao_iniciada", (dados) => {
     idTransmissaoAtual = dados.id_transmissao;
-    console.log("📡 Transmissão iniciada! ID:", idTransmissaoAtual);
+    console.log("📡 Conectado a SALA:", idTransmissaoAtual);
     atualizarNavbar(idTransmissaoAtual);
 });
-
-// Um objeto para armazenar o total_pedacos por ID de transmissão
-const totalPedacosPorTransmissao = {};
 
 socket.on('audio_metadata', function(dados) {
     console.log('📡 Metadados recebidos:', dados);
@@ -260,7 +284,6 @@ socket.on('audio_metadata', function(dados) {
 });
 
 socket.on('audio_processed', function(dados) {
-    console.log('📡 Dados de pedaço recebidos:', dados);
 
     const id = dados.id_transmissao;
     const id_pedaco = dados.id_pedaco;
@@ -346,7 +369,6 @@ socket.on('audio_processed', function(dados) {
     }
 });
 
-
 socket.on('iniciar_reproducao', function(dados) {
     if (dados.id_transmissao === idTransmissaoAtual) {
         estaTocando = true;
@@ -370,36 +392,6 @@ socket.on('player_control', function (dados) {
     
     executarComandoSincronizado(dados);
 });
-
-function validarComando(dados) {
-    const COMANDOS_VALIDOS = ['play', 'pause', 'seek'];
-    return (
-        dados &&
-        COMANDOS_VALIDOS.includes(dados.action) &&
-        typeof dados.currentTime === 'number' &&
-        dados.id_transmissao === idTransmissaoAtual
-    );
-}
-
-function executarComandoSincronizado(dados) {
-    estaSincronizando = true;
-    
-    try {
-        // Sincroniza o tempo primeiro
-        reprodutorAudio.currentTime = dados.currentTime;
-        
-        // Executa a ação (play/pause)
-        if (dados.action === 'play') {
-            reprodutorAudio.play();
-        } else if (dados.action === 'pause') {
-            reprodutorAudio.pause();
-        }
-    } catch (error) {
-        console.error("❌ Erro na sincronização do comando:", error);
-    }
-
-    estaSincronizando = false;
-}
 
 socket.on("connect", () => {
     console.log("✅ Conectado ao servidor:", URL_SERVIDOR);

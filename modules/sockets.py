@@ -1,6 +1,6 @@
 from flask import request
 from flask_socketio import emit, join_room
-from modules.utils import gerar_id_curto, cliente_pertence_transmissao, obter_host
+from modules.utils import gerar_id_curto, obter_host
 from time import time
 
 transmissoes = {}
@@ -9,7 +9,8 @@ COMANDOS_VALIDOS = ['play', 'pause', 'seek']
 def init_sockets(socketio):
     @socketio.on("audio_metadata")
     def receber_metadata(data):
-        print(f"🛬 Metadados recebidos no início: {data}") 
+        print("-------------------------------------------------------------")
+        print(f"🧑🏻‍💻 {request.sid} enviou metadatos: {data} 📡")
         sid = request.sid
 
         # Verificação dos metadados recebidos
@@ -17,8 +18,6 @@ def init_sockets(socketio):
             emit("erro_transmissao", {"mensagem": "Metadados incompletos"}, to=sid)
             print(f"⚠️ Erro: Metadados incompletos recebidos de {sid}")
             return
-
-        print(f"📥 totalChunks recebido do cliente {sid}: {data['totalChunks']}")
 
         # Criação de nova transmissão
         if "id_transmissao" not in data or not data["id_transmissao"]:
@@ -37,8 +36,9 @@ def init_sockets(socketio):
                 "status": "iniciando"
             }
 
-            print(f"🔴 Transmissão iniciada com o ID {id_transmissao} para o cliente {sid}")
-            print(f"✅ total_pedacos definido (nova transmissão): {data['totalChunks']}")
+            print(f"🔴 Transmissão iniciada na SALA: {id_transmissao} para o cliente: {sid}")
+            print("-------------------------------------------------------------")
+            
 
             emit("transmissao_iniciada", {"id_transmissao": id_transmissao}, to=sid)
             return
@@ -54,8 +54,7 @@ def init_sockets(socketio):
                 "status": "recebendo_audio"
             })
 
-            print(f"♻️ total_pedacos atualizado para a transmissão {id_transmissao}: {data['totalChunks']}")
-            print(f"📤 Emitindo metadados atualizados para sala {id_transmissao} com total_pedacos = {data['totalChunks']}")
+            print(f"📤 ✅ atualizando metadados para sala {id_transmissao} com total_pedacos = {data['totalChunks']}")
             
             emit("transmissao_atualizada", data, room=id_transmissao)
 
@@ -85,12 +84,11 @@ def init_sockets(socketio):
         # Armazena o pedaço
         transmissoes[host_sid]["pedacos"][id_pedaco] = chunk_data
 
-        print(f"✅ Cliente {sid} enviou pedaço {id_pedaco} para a transmissão {id_transmissao}")
-        #print(f"📡 Retransmitindo pedaço {id_pedaco} para a sala {id_transmissao}")
+        print("-------------------------------------------------------------")
 
         # Retransmitindo apenas para clientes que já estão na sala
         for cliente_sid in transmissoes[host_sid]["clientes_prontos"]:
-            print(f"🔁 Enviando pedaço {id_pedaco} da transmissão {id_transmissao} para o cliente {cliente_sid}")
+            print(f"🔁 Enviando pedaço {id_pedaco} da transmissão {id_transmissao} para o cliente: 🧑🏻‍💻 {cliente_sid}")
             emit("audio_processed", {
                 "id_transmissao": id_transmissao,
                 "id_pedaco": id_pedaco,
@@ -106,48 +104,37 @@ def init_sockets(socketio):
         # Verifica se a transmissão existe
         if not host_sid:
             emit("erro_transmissao", {"mensagem": "Transmissão não encontrada"}, to=request.sid)
-            print(f"⚠️ Cliente {request.sid} tentou acessar uma transmissão inexistente: {id_transmissao}")
+            print(f"⚠️ 🧑🏻‍� Cliente: {request.sid} tentou acessar uma transmissão inexistente: {id_transmissao}")
             return
 
-        join_room(id_transmissao)
+        join_room(id_transmissao)  # O cliente entra na sala (mesmo que já esteja, não causa problemas)
+
+        # 👇 Verifica se o cliente já estava na lista antes de adicioná-lo
         if request.sid not in transmissoes[host_sid]["clientes_prontos"]:
             transmissoes[host_sid]["clientes_prontos"].append(request.sid)
-        print(f"🎧 Cliente {request.sid} entrou na transmissão {id_transmissao}")
+            print(f"🧑🏻‍💻 ✅ Cliente: {request.sid} entrou na SALA: {id_transmissao}")  # Só mostra se for novo
+        else:
+            pass
 
-        # Obtém o total de pedaços da transmissão
+        # Resto do código (envio de metadados e pedaços de áudio)...
         total_pedacos = transmissoes[host_sid].get("total_pedacos")
 
-        # Verifica se o total_pedacos é válido
         if not total_pedacos or total_pedacos <= 0:
             emit("erro_transmissao", {"mensagem": "Total de pedaços inválido ou não definido."}, to=request.sid)
             print(f"⚠️ Transmissão {id_transmissao} não tem total_pedacos válido.")
             return
 
-        # Envia metadados da transmissão para o cliente
-        print(f"📦 Enviando metadados para {request.sid}: total_pedacos = {total_pedacos}")
+        print(f"📦 ✅ Enviando metadados para {request.sid}: total_pedacos = {total_pedacos}")
         emit("audio_metadata", {
             "id_transmissao": id_transmissao,
             "type": transmissoes[host_sid]["tipo"],
             "total_pedacos": total_pedacos
         }, to=request.sid)
 
-        # Obtém todos os pedaços da transmissão
+        # Envia os pedaços (priorizando os primeiros 10%)
         pedacos = list(transmissoes[host_sid]["pedacos"].items())
-
-        # Envia todos os pedaços processados para o cliente novo
-        print(f"📡 Enviando pedaços para o cliente {request.sid}...")
-        # Envia os pedaços restantes sem prioridade
-        for chunk_id, chunk_data in pedacos[int(len(pedacos) * 0.1):]:
-            print(f"🔁 Enviando pedaço {chunk_id} da transmissão {id_transmissao} para o cliente {request.sid}")
-            emit("audio_processed", {
-                "id_transmissao": id_transmissao,
-                "id_pedaco": chunk_id,
-                "dados": chunk_data
-                
-    }, to=request.sid)
-        # Envia os primeiros 10% dos pedaços com prioridade
-        primeiros_pedacos = pedacos[:int(len(pedacos) * 0.1)]
-        for chunk_id, chunk_data in primeiros_pedacos:
+        
+        for chunk_id, chunk_data in pedacos[:int(len(pedacos) * 0.1)]:
             emit("audio_processed", {
                 "id_transmissao": id_transmissao,
                 "id_pedaco": chunk_id,
@@ -155,14 +142,13 @@ def init_sockets(socketio):
                 "priority": True
             }, to=request.sid)
 
-        # Envia os pedaços restantes sem prioridade
         for chunk_id, chunk_data in pedacos[int(len(pedacos) * 0.1):]:
             emit("audio_processed", {
                 "id_transmissao": id_transmissao,
                 "id_pedaco": chunk_id,
                 "dados": chunk_data
             }, to=request.sid)
-            
+                
     @socketio.on("controle_player")
     def controle_player(data):
         try:
