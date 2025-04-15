@@ -86,15 +86,17 @@ def init_sockets(socketio):
         transmissoes[host_sid]["pedacos"][id_pedaco] = chunk_data
 
         print(f"✅ Cliente {sid} enviou pedaço {id_pedaco} para a transmissão {id_transmissao}")
-        print(f"📡 Retransmitindo pedaço {id_pedaco} para todos na sala {id_transmissao}")
+        #print(f"📡 Retransmitindo pedaço {id_pedaco} para a sala {id_transmissao}")
 
-        # Emitindo para todos na sala (inclusive quem enviou)
-        emit("audio_processed", {
-            "id_transmissao": id_transmissao,
-            "id_pedaco": id_pedaco,
-            "total_pedacos": transmissoes[host_sid]["total_pedacos"],
-            "dados": chunk_data
-        }, room=id_transmissao)
+        # Retransmitindo apenas para clientes que já estão na sala
+        for cliente_sid in transmissoes[host_sid]["clientes_prontos"]:
+            print(f"🔁 Enviando pedaço {id_pedaco} da transmissão {id_transmissao} para o cliente {cliente_sid}")
+            emit("audio_processed", {
+                "id_transmissao": id_transmissao,
+                "id_pedaco": id_pedaco,
+                "total_pedacos": transmissoes[host_sid]["total_pedacos"],
+                "dados": chunk_data
+            }, to=cliente_sid)
 
     @socketio.on("cliente_pronto")
     def cliente_pronto(data):
@@ -108,7 +110,8 @@ def init_sockets(socketio):
             return
 
         join_room(id_transmissao)
-        transmissoes[host_sid]["clientes_prontos"].append(request.sid)
+        if request.sid not in transmissoes[host_sid]["clientes_prontos"]:
+            transmissoes[host_sid]["clientes_prontos"].append(request.sid)
         print(f"🎧 Cliente {request.sid} entrou na transmissão {id_transmissao}")
 
         # Obtém o total de pedaços da transmissão
@@ -133,13 +136,15 @@ def init_sockets(socketio):
 
         # Envia todos os pedaços processados para o cliente novo
         print(f"📡 Enviando pedaços para o cliente {request.sid}...")
-        for chunk_id, chunk_data in pedacos:
+        # Envia os pedaços restantes sem prioridade
+        for chunk_id, chunk_data in pedacos[int(len(pedacos) * 0.1):]:
+            print(f"🔁 Enviando pedaço {chunk_id} da transmissão {id_transmissao} para o cliente {request.sid}")
             emit("audio_processed", {
                 "id_transmissao": id_transmissao,
                 "id_pedaco": chunk_id,
                 "dados": chunk_data
-            }, to=request.sid)
-
+                
+    }, to=request.sid)
         # Envia os primeiros 10% dos pedaços com prioridade
         primeiros_pedacos = pedacos[:int(len(pedacos) * 0.1)]
         for chunk_id, chunk_data in primeiros_pedacos:
@@ -157,17 +162,7 @@ def init_sockets(socketio):
                 "id_pedaco": chunk_id,
                 "dados": chunk_data
             }, to=request.sid)
-
-        # Aqui o host retransmite os pedaços para todos os clientes na sala, incluindo o novo cliente
-        for chunk_id, chunk_data in pedacos:
-            emit("audio_processed", {
-                "id_transmissao": id_transmissao,
-                "id_pedaco": chunk_id,
-                "dados": chunk_data
-            }, room=id_transmissao)
-            print(f"📡 Retransmitindo pedaço {chunk_id} para todos na sala {id_transmissao}")
-
-
+            
     @socketio.on("controle_player")
     def controle_player(data):
         try:
@@ -187,7 +182,7 @@ def init_sockets(socketio):
             if "total_pedacos" not in transmissoes.get(host_sid, {}):
                 emit("erro_transmissao", {"mensagem": "Erro: 'total_pedacos' não definido corretamente"}, to=request.sid)
                 return
-            print(f"🎮 Comando player recebido com total_pedacos = {transmissoes[host_sid]['total_pedacos']}")
+            #print(f"🎮 Comando player recebido com total_pedacos = {transmissoes[host_sid]['total_pedacos']}")
 
             # Adiciona timestamp do servidor
             dados_validados = {
@@ -196,7 +191,7 @@ def init_sockets(socketio):
                 "valid": True
             }
 
-            print(f"📡 Retransmitindo comando {data['action']} @ {data['currentTime']:.2f}s")
+            #print(f"📡 Retransmitindo comando {data['action']} @ {data['currentTime']:.2f}s")
             emit("player_control", dados_validados, room=data["id_transmissao"])
             
         except Exception as e:
