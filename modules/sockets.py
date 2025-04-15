@@ -4,6 +4,7 @@ from modules.utils import gerar_id_curto, cliente_pertence_transmissao, obter_ho
 from time import time
 
 transmissoes = {}
+COMANDOS_VALIDOS = ['play', 'pause', 'seek']
 
 def init_sockets(socketio):
     @socketio.on("audio_metadata")
@@ -122,8 +123,6 @@ def init_sockets(socketio):
         }, to=request.sid)
 
         print(f"🔄 Sincronização enviada para {request.sid} | Tempo: {tempo_atual_host:.2f}s")
-
-    COMANDOS_VALIDOS = ['play', 'pause', 'seek']
 
     @socketio.on("controle_player")
     def controle_player(data):

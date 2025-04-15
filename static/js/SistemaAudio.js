@@ -2,10 +2,10 @@
 import { tentarReproducao } from './Interfaces.js';
 
 // Verifica se o script está rodando em produção ou desenvolvimento
-const emProducao = !["localhost", "10.160.52.85"].includes(window.location.hostname);
+const emProducao = !["localhost", "192.168.1.3"].includes(window.location.hostname);
 const URL_SERVIDOR = emProducao 
     ? "https://ouca-junto.onrender.com"  // URL de produção
-    : "http://10.160.52.85:5000";            // URL local para desenvolvimento
+    : "http://192.168.1.3:5000";            // URL local para desenvolvimento
 
 // Configura o socket.io com opções de reconexão
 export const socket = io(URL_SERVIDOR, {

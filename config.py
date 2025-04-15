@@ -10,4 +10,4 @@ socketio_config = {
 if os.getenv("RENDER", "false").lower() == "true":
     HOST, PORT, DEBUG_MODE = "0.0.0.0", int(os.environ.get("PORT", 10000)), False
 else:
-    HOST, PORT, DEBUG_MODE = "10.160.52.85", 5000, True
+    HOST, PORT, DEBUG_MODE = "192.168.1.3", 5000, True
