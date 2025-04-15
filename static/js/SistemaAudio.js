@@ -232,11 +232,17 @@ socket.on("transmissao_iniciada", (dados) => {
     atualizarNavbar(idTransmissaoAtual);
 });
 
+// Um objeto para armazenar o total_pedacos por ID de transmissão
+const totalPedacosPorTransmissao = {};
+
 socket.on('audio_metadata', function(dados) {
     console.log('📡 Metadados recebidos:', dados);
 
     const id = dados.id_transmissao;
     const totalPedacos = dados.total_pedacos;  // total_pedacos enviado do backend
+
+    // Armazenar o total_pedacos para esse id de transmissão
+    totalPedacosPorTransmissao[id] = totalPedacos;
 
     // Inicializa o buffer para a transmissão
     if (!buffersAudios[id]) {
@@ -257,7 +263,6 @@ socket.on('audio_processed', function(dados) {
     console.log('📡 Dados de pedaço recebidos:', dados);
 
     const id = dados.id_transmissao;
-    const totalPedacos = dados.total_pedacos; // total_pedacos recebido do backend
     const id_pedaco = dados.id_pedaco;
     const dadosPedaço = dados.dados;
 
@@ -267,7 +272,8 @@ socket.on('audio_processed', function(dados) {
         return;
     }
 
-    // Checa se o total de pedaços é válido
+    // Verifica se o total_pedacos foi armazenado
+    const totalPedacos = totalPedacosPorTransmissao[id];
     if (totalPedacos === undefined || totalPedacos <= 0) {
         console.error("❌ total_pedacos não definido ou inválido.");
         return;
@@ -300,6 +306,10 @@ socket.on('audio_processed', function(dados) {
     buffer.pedacos[id_pedaco] = dadosPedaço;
 
     console.log(`✅ Pedaço ${id_pedaco} armazenado. (${buffer.recebidos}/${buffer.total})`);
+
+    // Atualiza o status de progresso dinamicamente
+    document.getElementById('status').innerText = 
+        `📥 Recebendo pedaço ${buffer.recebidos} de ${buffer.total}`;
 
     // Se todos os pedaços foram recebidos, monta o áudio
     if (buffer.recebidos === buffer.total) {
