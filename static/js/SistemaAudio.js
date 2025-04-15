@@ -232,74 +232,74 @@ socket.on("transmissao_iniciada", (dados) => {
     atualizarNavbar(idTransmissaoAtual);
 });
 
-socket.on('audio_processed', function(dados) {
-    console.log('📡 Dados recebidos:', dados); // Log completo para depurar a estrutura de dados
-    
+socket.on('audio_metadata', function(dados) {
+    console.log('📡 Metadados recebidos:', dados);
+
     const id = dados.id_transmissao;
-    const totalPedacos = dados.total_pedacos; // Agora você tem o total_pedacos
-    console.log('Total de pedaços:', totalPedacos);
+    const totalPedacos = dados.total_pedacos;  // total_pedacos enviado do backend
 
-    // Verifique se o ID da transmissão é válido
+    // Inicializa o buffer para a transmissão
+    if (!buffersAudios[id]) {
+        console.log(`🔧 Inicializando buffer para a transmissão ${id} com ${totalPedacos} pedaços.`);
+        buffersAudios[id] = {
+            pedacos: new Array(totalPedacos).fill(null), // Preenche com 'null' inicialmente
+            recebidos: 0,
+            total: totalPedacos  // Definindo o número total de pedaços
+        };
+    }
+
+    // Atualiza o status de recebimento
+    document.getElementById('status').innerText = 
+        `📥 Recebendo pedaço 0 de ${totalPedacos}`;
+});
+
+socket.on('audio_processed', function(dados) {
+    console.log('📡 Dados de pedaço recebidos:', dados);
+
+    const id = dados.id_transmissao;
+    const totalPedacos = dados.total_pedacos; // total_pedacos recebido do backend
+    const id_pedaco = dados.id_pedaco;
+    const dadosPedaço = dados.dados;
+
+    // Verifica se o ID da transmissão é válido
     if (!id || id !== idTransmissaoAtual) {
-        console.error(`❌ Transmissão com ID ${id} não encontrada ou inválida! ID esperado: ${idTransmissaoAtual}`);
-        return; // Interrompe a execução se o ID não for válido
+        console.error(`❌ Transmissão com ID ${id} não encontrada ou inválida!`);
+        return;
     }
 
-    // Checagem se o total de pedaços foi definido corretamente
-    if (dados.total_pedacos === undefined || dados.total_pedacos <= 0) {
-        console.error("❌ Erro: 'total_pedacos' não foi corretamente definido");
-        setTimeout(() => {
-            console.log("🔄 Tentando uma nova requisição ao backend...");
-            socket.emit('requisitar_total_pedacos', { id_transmissao: id }); // Tenta requisitar o total_pedacos novamente
-        }, 1000); // Tenta novamente após 1 segundo
-        return; // Interrompe a execução se 'total_pedacos' for inválido
+    // Checa se o total de pedaços é válido
+    if (totalPedacos === undefined || totalPedacos <= 0) {
+        console.error("❌ total_pedacos não definido ou inválido.");
+        return;
     }
 
-    // Só reinicializa o buffer se for o primeiro pedaço (id_pedaco === 0)
-    if (dados.id_pedaco === 0 && buffersAudios[id]) {
-        console.warn(`🔁 Reinicializando buffer da transmissão ${id} - novo envio detectado`);
+    // Se for o primeiro pedaço, reinicia o buffer
+    if (id_pedaco === 0 && buffersAudios[id]) {
+        console.warn(`🔁 Reinicializando buffer da transmissão ${id} - novo envio detectado.`);
         delete buffersAudios[id];
     }
 
-    // Inicializa o buffer se não existir ainda
+    // Inicializa o buffer se não existir
     if (!buffersAudios[id]) {
-        console.log(`🔧 Inicializando buffer para ${id} com ${dados.total_pedacos} pedaços.`);
         buffersAudios[id] = {
-            pedacos: new Array(dados.total_pedacos).fill(null), // Inicializa o array de pedaços com 'null'
+            pedacos: new Array(totalPedacos).fill(null),
             recebidos: 0,
-            total: dados.total_pedacos  // Definindo o número total de pedaços
+            total: totalPedacos
         };
     }
 
     const buffer = buffersAudios[id];
 
-    // Verifique se o valor total é válido
-    if (buffer.total === undefined) {
-        console.error(`❌ Erro: 'total' não foi corretamente definido para o id ${id}.`);
-        setTimeout(() => {
-            console.log("🔄 Tentando uma nova requisição ao backend...");
-            socket.emit('requisitar_total_pedacos', { id_transmissao: id }); // Tenta requisitar o total_pedacos novamente
-        }, 1000); // Tenta novamente após 1 segundo
-        return;  // Interrompe a execução se o total não for válido
-    } else {
-        console.log(`🔧 Pedaços totais para ${id}: ${buffer.total}`);
-    }
-
-    // Atualiza status para o usuário
-    document.getElementById('status').innerText =
-        `📥 Recebendo pedaço ${dados.id_pedaco + 1} de ${buffer.total}`;
-
-    // Se for duplicado, só substitui sem contar de novo
-    if (buffer.pedacos[dados.id_pedaco] !== null) {
-        console.warn(`♻️ Pedaço ${dados.id_pedaco} duplicado — será sobrescrito`);
+    // Evita armazenar pedaços duplicados
+    if (buffer.pedacos[id_pedaco] !== null) {
+        console.warn(`♻️ Pedaço ${id_pedaco} duplicado, substituindo...`);
     } else {
         buffer.recebidos++;
     }
 
-    // Sempre armazena (sobrescreve se necessário)
-    buffer.pedacos[dados.id_pedaco] = dados.dados;
+    buffer.pedacos[id_pedaco] = dadosPedaço;
 
-    console.log(`✅ Pedaço ${dados.id_pedaco} armazenado (${buffer.recebidos}/${buffer.total})`);
+    console.log(`✅ Pedaço ${id_pedaco} armazenado. (${buffer.recebidos}/${buffer.total})`);
 
     // Se todos os pedaços foram recebidos, monta o áudio
     if (buffer.recebidos === buffer.total) {
@@ -307,11 +307,7 @@ socket.on('audio_processed', function(dados) {
 
         // Verifica se algum pedaço está faltando
         if (buffer.pedacos.includes(null)) {
-            console.error("❌ Erro: Alguns pedaços estão faltando!");
-            setTimeout(() => {
-                console.log("🔄 Tentando uma nova requisição ao backend...");
-                socket.emit('requisitar_total_pedacos', { id_transmissao: id }); // Tenta requisitar o total_pedacos novamente
-            }, 1000); // Tenta novamente após 1 segundo
+            console.error("❌ Alguns pedaços estão faltando!");
             return;
         }
 
@@ -324,7 +320,6 @@ socket.on('audio_processed', function(dados) {
         // Configura o reprodutor de áudio
         reprodutorAudio.src = urlAudio;
         reprodutorAudio.onloadedmetadata = () => {
-            // Atualiza o status para indicar que o áudio está pronto
             document.getElementById('status').innerText = "🎵 Áudio pronto!";
             console.log("🟢 Tentando reproduzir...");
             reprodutorAudio.play().catch(err => {
@@ -340,7 +335,6 @@ socket.on('audio_processed', function(dados) {
         }, 1000);
     }
 });
-
 
 
 socket.on('iniciar_reproducao', function(dados) {
