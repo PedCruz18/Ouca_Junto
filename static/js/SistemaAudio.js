@@ -121,6 +121,9 @@ window.enviarAudio = async function () {
     socket.emit("cliente_pronto", { id_transmissao: idTransmissaoAtual });
     document.getElementById("status").innerText = `🔄 Aguardando áudio da transmissão ${idTransmissaoAtual}...`;
 
+    // ✅ 1. Abre o grupo UMA VEZ (antes do loop)
+    console.groupCollapsed(`📦 Enviando ${totalpedacos} pedaços`);
+
     for (let i = 0; i < totalpedacos; i++) {
         const inicio = i * tamanhoPedaco;
         const fim = Math.min(inicio + tamanhoPedaco, arquivo.size);
@@ -129,6 +132,7 @@ window.enviarAudio = async function () {
         // Verifica se o ID da transmissão é válido antes de enviar
         if (!idTransmissaoAtual) {
             console.error("❌ ID de transmissão não definido, abortando envio de pedaços.");
+            console.groupEnd(); // Fecha o grupo se houver erro
             return;
         }
 
@@ -140,12 +144,16 @@ window.enviarAudio = async function () {
                     chunkId: i,
                     data: e.target.result
                 });
-                console.log(`📦 Pedaço ${i + 1}/${totalpedacos} enviado (${fim - inicio} bytes)`);
+                // ✅ 2. Log de cada pedaço DENTRO do grupo
+                console.log(`➡️ Pedaço ${i + 1}/${totalpedacos} | ${fim - inicio} bytes`);
                 resolve();
             };
             leitor.readAsArrayBuffer(pedaco);
         });
     }
+
+    // ✅ 3. Fecha o grupo DEPOIS do loop
+    console.groupEnd();
 
     entrada.value = "";
     console.log("✅ Envio de áudio finalizado");
