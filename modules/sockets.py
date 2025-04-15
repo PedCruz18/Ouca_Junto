@@ -9,6 +9,7 @@ COMANDOS_VALIDOS = ['play', 'pause', 'seek']
 def init_sockets(socketio):
     @socketio.on("audio_metadata")
     def receber_metadata(data):
+        print(f"Metadados recebidos no inicio: {data}") 
         sid = request.sid
         if not data or "type" not in data or "totalChunks" not in data:
             emit("erro_transmissao", {"mensagem": "Metadados incompletos"}, to=sid)
@@ -24,7 +25,7 @@ def init_sockets(socketio):
                 "id": id_transmissao,
                 "pedacos": {},
                 "clientes_prontos": [sid],
-                "total_pedacos": data["totalChunks"],
+                "total_pedacos": data["totalChunks"],  # Confirma que o total de pedaços está sendo recebido corretamente
                 "tipo": data["type"],
                 "status": "iniciando"
             }
@@ -32,21 +33,18 @@ def init_sockets(socketio):
             emit("transmissao_iniciada", {"id_transmissao": id_transmissao}, to=sid)
             return
 
+        # Se a transmissão já existir, atualiza os metadados
         id_transmissao = data["id_transmissao"]
         host_sid = obter_host(transmissoes, id_transmissao)
-        if not host_sid or not cliente_pertence_transmissao(transmissoes, sid, id_transmissao):
-            print(f"⚠️ Cliente {sid} não autorizado ou transmissão inexistente para ID {id_transmissao}")
-            emit("erro_transmissao", {"mensagem": "Não autorizado ou inexistente"}, to=sid)
-            return
-
-        transmissoes[host_sid].update({
-            "pedacos": {},
-            "total_pedacos": data["totalChunks"],
-            "tipo": data["type"],
-            "status": "recebendo_audio"
-        })
-        print(f"📡 Transmissão {id_transmissao} atualizada - recebendo áudio")
-        emit("transmissao_atualizada", data, room=id_transmissao)
+        if host_sid:
+            # Aqui você garante que o valor 'total_pedacos' está sendo corretamente atualizado
+            transmissoes[host_sid].update({
+                "pedacos": {},
+                "total_pedacos": data["totalChunks"],  # Atualiza o total de pedaços
+                "tipo": data["type"],
+                "status": "recebendo_audio"
+            })
+            emit("transmissao_atualizada", data, room=id_transmissao)
 
     @socketio.on("audio_chunk")
     def receber_pedaco(data):
@@ -58,6 +56,11 @@ def init_sockets(socketio):
         if not host_sid or id_pedaco is None:
             return
 
+        # Verifica se 'total_pedacos' foi definido antes de processar os pedaços
+        if "total_pedacos" not in transmissoes[host_sid]:
+            emit("erro_transmissao", {"mensagem": "Erro: 'total_pedacos' não definido corretamente"}, to=request.sid)
+            return
+
         if id_pedaco in transmissoes[host_sid]["pedacos"]:
             return
 
@@ -65,7 +68,7 @@ def init_sockets(socketio):
         emit("audio_processed", {
             "id_transmissao": id_transmissao,
             "id_pedaco": id_pedaco,
-            "total_pedacos": transmissoes[host_sid]["total_pedacos"],
+            "total_pedacos": transmissoes[host_sid]["total_pedacos"],  # Aqui, envia o total de pedaços
             "dados": chunk_data
         }, room=id_transmissao)
 
@@ -73,7 +76,7 @@ def init_sockets(socketio):
     def cliente_pronto(data):
         id_transmissao = data.get("id_transmissao")
         host_sid = obter_host(transmissoes, id_transmissao)
-        
+
         if not host_sid:
             emit("erro_transmissao", {"mensagem": "Transmissão não encontrada"}, to=request.sid)
             print(f"⚠️ Cliente {request.sid} tentou acessar transmissão inexistente: {id_transmissao}")
@@ -88,41 +91,36 @@ def init_sockets(socketio):
         emit("audio_metadata", {
             "id_transmissao": id_transmissao,
             "type": transmissoes[host_sid]["tipo"],
-            "total_pedacos": transmissoes[host_sid]["total_pedacos"]
+            "total_pedacos": transmissoes[host_sid]["total_pedacos"]  # Sempre envia o total de pedaços
         }, to=request.sid)
 
-        # 3. Envia pedacos prioritários (primeiros 10% para buffer inicial)
+        # 3. Envia todos os pedaços recebidos
         pedacos = list(transmissoes[host_sid]["pedacos"].items())
-        primeiros_pedacos = pedacos[:int(len(pedacos) * 0.1)]
-        
-        for chunk_id, chunk_data in primeiros_pedacos:
-            emit("audio_processed", {
-                "id_transmissao": id_transmissao,
-                "id_pedaco": chunk_id,
-                "dados": chunk_data,
-                "priority": True  # Sinaliza que são pedacos prioritários
-            }, to=request.sid)
 
-        # 4. Envia o restante dos pedacos
-        for chunk_id, chunk_data in pedacos[int(len(pedacos) * 0.1):]:
+        for chunk_id, chunk_data in pedacos:
             emit("audio_processed", {
                 "id_transmissao": id_transmissao,
                 "id_pedaco": chunk_id,
                 "dados": chunk_data
             }, to=request.sid)
 
-        # 5. Sincronização precisa:
-        tempo_atual_host = transmissoes[host_sid].get("tempo_atual", 0)
-        latencia_estimada = 0.5  # Valor inicial (ajustável dinamicamente)
+        # 4. Caso haja pedaços prioritários, envie-os primeiro
+        primeiros_pedacos = pedacos[:int(len(pedacos) * 0.1)]
+        for chunk_id, chunk_data in primeiros_pedacos:
+            emit("audio_processed", {
+                "id_transmissao": id_transmissao,
+                "id_pedaco": chunk_id,
+                "dados": chunk_data,
+                "priority": True  # Prioritário
+            }, to=request.sid)
 
-        emit("iniciar_reproducao", {
-            "id_transmissao": id_transmissao,
-            "tempo_atual": tempo_atual_host + latencia_estimada,  # Compensa latência
-            "server_time": time(),  # Timestamp de referência
-            "buffer_minimo": 3.0  # Tempo mínimo de buffer sugerido
-        }, to=request.sid)
-
-        print(f"🔄 Sincronização enviada para {request.sid} | Tempo: {tempo_atual_host:.2f}s")
+        # 5. Envia o restante dos pedaços, se houver
+        for chunk_id, chunk_data in pedacos[int(len(pedacos) * 0.1):]:
+            emit("audio_processed", {
+                "id_transmissao": id_transmissao,
+                "id_pedaco": chunk_id,
+                "dados": chunk_data
+            }, to=request.sid)
 
     @socketio.on("controle_player")
     def controle_player(data):
@@ -134,6 +132,14 @@ def init_sockets(socketio):
                 not data.get("id_transmissao")):
                 
                 print(f"🚫 Comando inválido bloqueado: {data}")
+                return
+
+            id_transmissao = data["id_transmissao"]
+            host_sid = obter_host(transmissoes, id_transmissao)
+
+            # Verifica se 'total_pedacos' está presente antes de processar
+            if "total_pedacos" not in transmissoes.get(host_sid, {}):
+                emit("erro_transmissao", {"mensagem": "Erro: 'total_pedacos' não definido corretamente"}, to=request.sid)
                 return
 
             # Adiciona timestamp do servidor
@@ -148,7 +154,7 @@ def init_sockets(socketio):
             
         except Exception as e:
             print(f"🔥 Erro no controle_player: {e}\nDados: {data}")
-        
+
     @socketio.on("solicitar_sincronizacao")
     def sincronizar_tempo(data):
         id_transmissao = data.get("id_transmissao")

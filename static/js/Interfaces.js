@@ -23,7 +23,7 @@ export async function tentarReproducao() {
  try {
   await reprodutorAudio.play();
  } catch (e) {
-  logger.log("Reprodução bloqueada, aguardando interação.");
+  console.log("Reprodução bloqueada, aguardando interação.");
   document.getElementById("status").innerText = "Toque para iniciar a reprodução";
   document.body.addEventListener(
    "click",
