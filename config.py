@@ -7,8 +7,8 @@ BASE_SOCKETIO_CONFIG = {
     "ping_interval": 20,
     "async_mode": "eventlet",
     "cors_allowed_origins": "*",
-    "logger": True,
-    "engineio_logger": True
+    "logger": False,
+    "engineio_logger": False
 }
 
 def get_local_ip():
