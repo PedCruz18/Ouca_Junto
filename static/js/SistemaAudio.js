@@ -1,20 +1,22 @@
 // Imports das Interfaces
 import { tentarReproducao } from "./Interfaces.js";
 
+const MAQLOCAL = "192.168.1.2"
+
 // Verifica se o script está rodando em produção ou desenvolvimento
-const emProducao = !["localhost", "192.168.1.3"].includes(window.location.hostname);
+const emProducao = !["localhost", MAQLOCAL].includes(window.location.hostname);
 const URL_SERVIDOR = emProducao
- ? "https://ouca-junto.onrender.com" // URL de produção
- : "http://192.168.1.2:5000"; // URL local para desenvolvimento
+  ? "https://ouca-junto.onrender.com" // URL de produção
+  : `http://${MAQLOCAL}:5000`; // URL local para desenvolvimento
 
 // Configura o socket.io com opções de reconexão
 export const socket = io(URL_SERVIDOR, {
- transports: ["websocket", "polling"],
- secure: emProducao,
- withCredentials: true,
- reconnection: true,
- reconnectionAttempts: 5,
- reconnectionDelay: 2000,
+  transports: ["websocket", "polling"],
+  secure: emProducao,
+  withCredentials: true,
+  reconnection: true,
+  reconnectionAttempts: 5,
+  reconnectionDelay: 2000,
 });
 
 // ------------------------------------------------------------------
@@ -41,6 +43,16 @@ export const logger = {
   }
  },
  debug: (...args) => {
+  if (!emProducao) {
+   console.debug(...args);
+  }
+ },
+ groupCollapsed: (...args) => {
+  if (!emProducao) {
+    console.debug(...args);
+  }
+ },
+ groupEnd: (...args) => {
   if (!emProducao) {
    console.debug(...args);
   }
