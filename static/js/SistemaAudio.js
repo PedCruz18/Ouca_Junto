@@ -25,29 +25,6 @@ window.sairDaTransmissao = sairDaTransmissao;
 
 // ------------------------------------------------------------------
 
-// --- Controle de Reprodução (Play/Pause) ---
-function enviarControleReproducao(acao) {
-  const dados = {
-    action: acao,
-    currentTime: reprodutorAudio.currentTime,
-    id_transmissao: idTransmissaoAtual,
-    originador: socket.id
-  };
-  logger.log("📤 Enviando controle de reprodução:", dados);
-  socket.emit("controle_player", dados);
-}
-
-// --- Sincronização de Posição (Seek) ---
-function enviarSincronizacaoPosicao(tempo) {
-  const dados = {
-    action: "seek",
-    currentTime: tempo,
-    id_transmissao: idTransmissaoAtual,
-    originador: socket.id
-  };
-  logger.log("📤 Enviando sincronização de posição:", dados);
-  socket.emit("controle_player", dados);
-}
 
 reprodutorAudio.addEventListener("play", () => {
   if (ignorarEventosLocais) return;
@@ -110,15 +87,29 @@ function executarComandoSincronizado(dados) {
   }, 300); // Pequeno delay para evitar reemissão
 }
 
-// --- Handler de eventos do socket ---
-socket.on("player_control", function(dados) {
-  // Ignora comandos originados neste cliente
-  if (dados.originador === socket.id) return;
+// --- Controle de Reprodução (Play/Pause) ---
+function enviarControleReproducao(acao) {
+  const dados = {
+    action: acao,
+    currentTime: reprodutorAudio.currentTime,
+    id_transmissao: idTransmissaoAtual,
+    originador: socket.id
+  };
+  logger.log("📤 Enviando controle de reprodução:", dados);
+  socket.emit("controle_player", dados);
+}
 
-  if (!validarComando(dados)) return;
-  executarComandoSincronizado(dados);
-});
-
+// --- Sincronização de Posição (Seek) ---
+function enviarSincronizacaoPosicao(tempo) {
+  const dados = {
+    action: "seek",
+    currentTime: tempo,
+    id_transmissao: idTransmissaoAtual,
+    originador: socket.id
+  };
+  logger.log("📤 Enviando sincronização de posição:", dados);
+  socket.emit("controle_player", dados);
+}
 
 function validarComando(dados) {
   const COMANDOS_VALIDOS = ["play", "pause", "seek"];
@@ -131,6 +122,7 @@ function validarComando(dados) {
 }
  
 // ------------------------------------------------------------------
+
 // Envio de arquivo de áudio
 window.enviarAudio = async function () {
  const entrada = document.getElementById("arquivoAudio");
@@ -204,6 +196,7 @@ window.enviarAudio = async function () {
 };
 
 // ------------------------------------------------------------------
+
 // Atualiza o rodapé com o ID da sala
 function atualizarNavbar(id) {
  const divConectar = document.getElementById("conectar");
@@ -219,6 +212,8 @@ function atualizarNavbar(id) {
   divInfoSala.style.display = "none";
  }
 }
+
+// ------------------------------------------------------------------
 
 // Conecta como ouvinte
 function conectarComoOuvinte() {
@@ -255,6 +250,7 @@ function sairDaTransmissao() {
  souAnfitriao = false;
  atualizarNavbar(null);
 }
+
 // ------------------------------------------------------------------
 // Eventos do socket
 
@@ -442,8 +438,21 @@ socket.on("iniciar_reproducao", function (dados) {
  }
 });
 
+socket.on("player_control", function(dados) {
+  // Ignora comandos originados neste cliente
+  if (dados.originador === socket.id) return;
 
+  if (!validarComando(dados)) return;
+  executarComandoSincronizado(dados);
+});
 
+socket.on("player_control", function(dados) {
+  // Ignora comandos originados neste cliente
+  if (dados.originador === socket.id) return;
+
+  if (!validarComando(dados)) return;
+  executarComandoSincronizado(dados);
+});
 
 socket.on("connect", () => {
  console.log("✅ Conectado ao servidor:", URL_SERVIDOR);
