@@ -1,86 +1,21 @@
 // Imports das Interfaces
 import { tentarReproducao } from "./Interfaces.js";
+import { logger } from "./logprivsys.js";
+import { socket, URL_SERVIDOR } from "./ambienteini.js";
 
-const MAQLOCAL = "192.168.1.2"
-
-// Verifica se o script está rodando em produção ou desenvolvimento
-const emProducao = !["localhost", MAQLOCAL].includes(window.location.hostname);
-const URL_SERVIDOR = emProducao
-  ? "https://ouca-junto.onrender.com" // URL de produção
-  : `http://${MAQLOCAL}:5000`; // URL local para desenvolvimento
-
-// Configura o socket.io com opções de reconexão
-export const socket = io(URL_SERVIDOR, {
-  transports: ["websocket", "polling"],
-  secure: emProducao,
-  withCredentials: true,
-  reconnection: true,
-  reconnectionAttempts: 5,
-  reconnectionDelay: 2000,
-});
+// variaveis de uso
+const reprodutorAudio = document.getElementById("reprodutorAudio");
+let buffersAudios = {};
+let totalPedacosPorTransmissao = {};
+let estaSincronizando = false;
+let estaTocando = false;
+let ultimoSeekTime = 0;
+let idTransmissaoAtual = null;
+let logInseridoNaSalaJaMostrado = false;
+let intervaloMonitoramento = null;
+let tentativasMonitoramento = 0;
 
 // ------------------------------------------------------------------
-
-export const logger = {
- log: (...args) => {
-  if (emProducao) {
-   console.log(...args);
-  }
- },
- warn: (...args) => {
-  if (emProducao) {
-   console.warn(...args);
-  }
- },
- error: (...args) => {
-  if (emProducao) {
-   console.error(...args);
-  }
- },
- info: (...args) => {
-  if (emProducao) {
-   console.info(...args);
-  }
- },
- debug: (...args) => {
-  if (emProducao) {
-   console.debug(...args);
-  }
- },
- groupCollapsed: (...args) => {
-  if (emProducao) {
-    console.debug(...args);
-  }
- },
- groupEnd: (...args) => {
-  if (emProducao) {
-   console.debug(...args);
-  }
- },
- groupCollapsed: (...args) => {
-  if (!emProducao) {
-    console.debug(...args);
-  }
- },
- groupEnd: (...args) => {
-  if (!emProducao) {
-   console.debug(...args);
-  }
- },
-};
-
-// -------------------------------------------------------------------
-// Armazena os buffers de áudio das transmissões
-const buffersAudios = {};
-const totalPedacosPorTransmissao = {};
-
-export let idTransmissaoAtual = null;
-export let estaSincronizando = false;
-export let estaTocando = false;
-export const reprodutorAudio = document.getElementById("reprodutorAudio");
-export let souAnfitriao = false;
-let ultimoSeekTime = 0;
-
 window.conectarComoOuvinte = conectarComoOuvinte;
 window.sairDaTransmissao = sairDaTransmissao;
 
@@ -124,7 +59,7 @@ window.enviarAudio = async function () {
 
  const tamanhoPedaco = 1024 * 512;
  const totalpedacos = Math.ceil(arquivo.size / tamanhoPedaco);
- logger.log(`🔄 Total de pedaços a enviar: ${totalpedacos}`);
+ logger.log(`⬆️✅ Total de pedaços a enviar: ${totalpedacos}`);
 
  socket.emit("audio_metadata", {
   id_transmissao: idTransmissaoAtual,
@@ -133,7 +68,7 @@ window.enviarAudio = async function () {
  });
 
  while (!idTransmissaoAtual) {
-  logger.log("⏳ Aguardando ID da transmissão...");
+  logger.log("⏳ Aguardando backend criar a SALA da transmissão...");
   await new Promise((res) => setTimeout(res, 100)); // Aguarda até o ID estar disponível
  }
 
@@ -283,125 +218,181 @@ function executarComandoSincronizado(dados) {
 // Eventos do socket
 
 socket.on("transmissao_iniciada", (dados) => {
- idTransmissaoAtual = dados.id_transmissao;
- logger.log("📡 Conectado a SALA:", idTransmissaoAtual);
- atualizarNavbar(idTransmissaoAtual);
+  idTransmissaoAtual = dados.id_transmissao;
+
+  if (!logInseridoNaSalaJaMostrado) {
+    logger.log("📡 Inserido na SALA:", idTransmissaoAtual);
+    logInseridoNaSalaJaMostrado = true;
+  }
+
+  atualizarNavbar(idTransmissaoAtual);
+
+  if (!intervaloMonitoramento) {
+    tentativasMonitoramento = 0;
+
+    intervaloMonitoramento = setInterval(() => {
+      tentativasMonitoramento++;
+
+      if (!totalPedacosPorTransmissao || Object.keys(totalPedacosPorTransmissao).length === 0) {
+        logger.warn("⚠️ totalPedacosPorTransmissao está vazio. Nenhuma transmissão com metadados recebidos ainda?");
+      } else if (!totalPedacosPorTransmissao[idTransmissaoAtual]) {
+        logger.warn(`⚠️ Nenhuma entrada encontrada em totalPedacosPorTransmissao para o ID atual (${idTransmissaoAtual}). Metadados ainda não chegaram?`);
+      } else {
+        logger.log("🔄 totalPedacosPorTransmissao:", totalPedacosPorTransmissao);
+      }
+
+      if (tentativasMonitoramento >= 5) {
+        clearInterval(intervaloMonitoramento);
+        intervaloMonitoramento = null;
+        logger.log("🛑 Monitoramento encerrado após 5 tentativas.");
+      }
+
+    }, 5000);
+  }
 });
 
 socket.on("audio_metadata", function (dados) {
- logger.log("📡 Metadados recebidos:", dados);
 
- const id = dados.id_transmissao;
- const totalPedacos = dados.total_pedacos; // total_pedacos enviado do backend
+  logger.log("⬇️✅ Metadados recebidos:", dados);
 
- // Armazenar o total_pedacos para esse id de transmissão
- totalPedacosPorTransmissao[id] = totalPedacos;
+  const id = dados.id_transmissao;
+  const totalPedacos = dados.total_pedacos; // total_pedacos enviado do backend
 
- // Inicializa o buffer para a transmissão
- if (!buffersAudios[id]) {
-  logger.log(`🔧 Inicializando buffer para a transmissão ${id} com ${totalPedacos} pedaços.`);
-  buffersAudios[id] = {
-   pedacos: new Array(totalPedacos).fill(null), // Preenche com 'null' inicialmente
-   recebidos: 0,
-   total: totalPedacos, // Definindo o número total de pedaços
-  };
- }
+    
+  // ⚠️ Isso é crucial!
+  idTransmissaoAtual = id;
 
- // Atualiza o status de recebimento
- document.getElementById("status").innerText = `📥 Recebendo pedaço 0 de ${totalPedacos}`;
+  // Armazenar o total_pedacos para esse id de transmissão
+  totalPedacosPorTransmissao[id] = totalPedacos;
+
+  // 💡 LOG do estado atual antes de resetar/definir buffer
+  logger.log(`📊 [ANTES] Estado inicial do buffer ${id}:`, buffersAudios[id]);
+
+  // Inicializa o buffer para a transmissão
+  if (!buffersAudios[id]) {
+    buffersAudios[id] = {
+      pedacos: new Array(totalPedacos).fill(null), // Preenche com 'null' inicialmente
+      recebidos: 0,
+      total: totalPedacos, // Definindo o número total de pedaços
+    };
+  }
+
+  // 💡 LOG após criação/inicialização
+  logger.log(`📊 [DEPOIS] Buffer criado/inicializado para ${id}:`, buffersAudios[id]);
+
+  // Atualiza o status de recebimento
+  document.getElementById("status").innerText = `📥 Recebendo pedaço 0 de ${totalPedacos}`;
 });
 
 socket.on("audio_processed", function (dados) {
- const id = dados.id_transmissao;
- const id_pedaco = dados.id_pedaco;
- const dadosPedaco = dados.dados;
+  const id = dados.id_transmissao;
+  const id_pedaco = dados.id_pedaco;
+  const dadosPedaco = dados.dados;
 
- // Verifica se o ID da transmissão é válido
- if (!id || id !== idTransmissaoAtual) {
-  logger.error(`❌ Transmissão com ID ${id} não encontrada ou inválida!`);
-  return;
- }
-
- // Verifica se o total_pedacos foi armazenado
- const totalPedacos = totalPedacosPorTransmissao[id];
- if (totalPedacos === undefined || totalPedacos <= 0) {
-  logger.error("❌ total_pedacos não definido ou inválido.");
-  return;
- }
-
- // Cria um grupo colapsado para os pedaços recebidos (se for o primeiro pedaço)
- if (id_pedaco === 0) {
-  logger.groupCollapsed(`📥 Recebendo ${totalPedacos} pedaços (Transmissão ${id})`);
- }
-
- // Se for o primeiro pedaço, reinicia o buffer
- if (id_pedaco === 0 && buffersAudios[id]) {
-  logger.warn(`🔁 Reinicializando buffer da transmissão ${id} - novo envio detectado.`);
-  delete buffersAudios[id];
- }
-
- // Inicializa o buffer se não existir
- if (!buffersAudios[id]) {
-  buffersAudios[id] = {
-   pedacos: new Array(totalPedacos).fill(null),
-   recebidos: 0,
-   total: totalPedacos,
-  };
- }
-
- const buffer = buffersAudios[id];
-
- // Evita armazenar pedaços duplicados
- if (buffer.pedacos[id_pedaco] !== null) {
-  logger.warn(`♻️ Pedaço ${id_pedaco} duplicado, substituindo...`);
- } else {
-  buffer.recebidos++;
- }
-
- buffer.pedacos[id_pedaco] = dadosPedaco;
-
- // Log do pedaço recebido (dentro do grupo)
- logger.log(`✅ Pedaço ${id_pedaco + 1}/${buffer.total} (${dadosPedaco.byteLength} bytes)`);
-
- // Atualiza o status de progresso dinamicamente
- document.getElementById(
-  "status"
- ).innerText = `📥 Recebendo pedaço ${buffer.recebidos} de ${buffer.total}`;
-
- // Se todos os pedaços foram recebidos, monta o áudio e fecha o grupo
- if (buffer.recebidos === buffer.total) {
-  logger.log("📦 Todos os pedaços recebidos, montando áudio...");
-  logger.groupEnd(); // Fecha o grupo de recebimento
-
-  // Verifica se algum pedaço está faltando
-  if (buffer.pedacos.includes(null)) {
-   logger.error("❌ Alguns pedaços estão faltando!");
-   return;
+  // Verifica se o ID da transmissão é válido
+  if (!id || id !== idTransmissaoAtual) {
+    logger.error(`❌ Transmissão com ID ${id} não encontrada ou inválida!`);
+    return;
   }
 
-  // Monta o áudio a partir dos pedaços
-  const blobAudio = new Blob(buffer.pedacos, { type: "audio/*" });
-  const urlAudio = URL.createObjectURL(blobAudio);
+  // Verifica se o total_pedacos foi armazenado
+  let totalPedacos = totalPedacosPorTransmissao[id];
+  if (totalPedacos === undefined || totalPedacos <= 0) {
+    logger.error("❌ total_pedacos não definido ou inválido.");
+    return;
+  }
 
-  logger.log("🎵🟢 Áudio montado com sucesso, Tentando reproduzir...");
+  // Cria um grupo colapsado para os pedaços recebidos (se for o primeiro pedaço)
+  if (id_pedaco === 0) {
+    logger.groupCollapsed(`📥 Recebendo ${totalPedacos} pedaços (Transmissão ${id})`);
+  }
 
-  // Configura o reprodutor de áudio
-  reprodutorAudio.src = urlAudio;
-  reprodutorAudio.onloadedmetadata = () => {
-   document.getElementById("status").innerText = "🎵 Áudio pronto!";
-   reprodutorAudio.play().catch((err) => {
-    logger.warn("🔴 Falha na reprodução automática:", err);
-    document.getElementById("status").innerText = "Clique para reproduzir!";
-   });
-  };
+  // Se for o primeiro pedaço, reinicia o buffer
+  if (id_pedaco === 0 && buffersAudios[id]) {
+    logger.warn(`🔁 Reinicializando buffer da transmissão ${id} - novo envio detectado.`);
 
-  // Limpa o buffer após 1 segundo
-  setTimeout(() => {
-   logger.log("🧹 Limpando buffer...");
-   delete buffersAudios[id];
-  }, 1000);
- }
+    // Reinicializa os dados antes de um novo recebimento de dados
+    buffersAudios[id].pedacos = new Array(totalPedacos).fill(null);
+    buffersAudios[id].recebidos = 0;
+    buffersAudios[id].total = totalPedacos;
+
+    logger.warn(`🧼 Buffer da transmissão ${id} resetado com sucesso.`);
+  }
+
+  // Inicializa o buffer se não existir
+  if (!buffersAudios[id]) {
+    buffersAudios[id] = {
+      pedacos: new Array(totalPedacos).fill(null),
+      recebidos: 0,
+      total: totalPedacos,
+    };
+  }
+
+  const buffer = buffersAudios[id];
+
+  // Evita armazenar pedaços duplicados
+  if (buffer.pedacos[id_pedaco] !== null) {
+    logger.warn(`♻️ Pedaço ${id_pedaco} duplicado, substituindo...`);
+  } else {
+    buffer.recebidos++;
+  }
+
+  buffer.pedacos[id_pedaco] = dadosPedaco;
+
+  // Log do pedaço recebido (dentro do grupo)
+  logger.log(`✅ Pedaço ${id_pedaco + 1}/${buffer.total} (${dadosPedaco.byteLength} bytes)`);
+
+  // Atualiza o status de progresso dinamicamente
+  document.getElementById(
+    "status"
+  ).innerText = `📥 Recebendo pedaço ${buffer.recebidos} de ${buffer.total}`;
+
+  // Se todos os pedaços foram recebidos, monta o áudio e fecha o grupo
+  if (buffer.recebidos === buffer.total) {
+    logger.log("📦 Todos os pedaços recebidos, montando áudio...");
+    logger.groupEnd();
+
+    // Verifica se algum pedaço está faltando
+    if (buffer.pedacos.includes(null)) {
+      logger.error("❌ Alguns pedaços estão faltando!");
+      return;
+    }
+
+    // Monta o áudio a partir dos pedaços
+    const blobAudio = new Blob(buffer.pedacos, { type: "audio/*" });
+    const urlAudio = URL.createObjectURL(blobAudio);
+
+    logger.log("🎵🟢 Áudio montado com sucesso, Tentando reproduzir...");
+
+    // Configura o reprodutor de áudio
+    reprodutorAudio.src = urlAudio;
+    reprodutorAudio.onloadedmetadata = () => {
+      document.getElementById("status").innerText = "🎵 Áudio pronto!";
+      reprodutorAudio.play().catch((err) => {
+        logger.warn("🔴 Falha na reprodução automática:", err);
+        document.getElementById("status").innerText = "Clique para reproduzir!";
+      });
+    };
+
+    // ✅ Agora resetamos tudo após a reprodução
+    setTimeout(() => {
+      if (buffersAudios[id]) {
+        logger.warn(`🧹 [ANTES] Resetando buffer da transmissão ${id}:`, { ...buffersAudios[id] });
+    
+        // Reseta completamente o buffer e o total de pedaços
+        buffersAudios[id].pedacos = [];
+        buffersAudios[id].recebidos = 0;
+        buffersAudios[id].total = 0
+    
+        logger.warn(`🧼 [DEPOIS] Buffer da transmissão ${id} foi resetado:`, { ...buffersAudios[id] });
+      } else {
+        logger.warn(`⚠️ Nenhum buffer encontrado para resetar na transmissão ${id}`);
+      }
+    }, 1000);
+  }
 });
+
+
 
 socket.on("iniciar_reproducao", function (dados) {
  if (dados.id_transmissao === idTransmissaoAtual) {
@@ -426,6 +417,8 @@ socket.on("player_control", function (dados) {
 
  executarComandoSincronizado(dados);
 });
+
+
 
 socket.on("connect", () => {
  console.log("✅ Conectado ao servidor:", URL_SERVIDOR);

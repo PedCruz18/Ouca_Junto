@@ -1,8 +1,6 @@
 // Imports do Sistema de Áudio
-import {
- reprodutorAudio,
-} from "./SistemaAudio.js";
-
+import { reprodutorAudio } from "./varsdeuso.js";
+ 
 // ---------------------------------------------------------------------------
 
 // Botão do menu mobile

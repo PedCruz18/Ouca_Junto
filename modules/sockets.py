@@ -10,7 +10,7 @@ def init_sockets(socketio):
     @socketio.on("audio_metadata")
     def receber_metadata(data):
         print("-------------------------------------------------------------")
-        print(f"🧑🏻‍💻 {request.sid} enviou metadatos: {data} 📡")
+        print(f"🧑🏻‍💻 {request.sid} enviou metadados: {data} 📡")
         sid = request.sid
 
         # Verificação dos metadados recebidos
@@ -39,24 +39,36 @@ def init_sockets(socketio):
             print(f"🔴 Transmissão iniciada na SALA: {id_transmissao} para o cliente: {sid}")
             print("-------------------------------------------------------------")
             
-
             emit("transmissao_iniciada", {"id_transmissao": id_transmissao}, to=sid)
             return
 
         # Atualização de uma transmissão existente
         id_transmissao = data["id_transmissao"]
         host_sid = obter_host(transmissoes, id_transmissao)
-        if host_sid:
-            transmissoes[host_sid].update({
-                "pedacos": {},
-                "total_pedacos": data["totalChunks"],
-                "tipo": data["type"],
-                "status": "recebendo_audio"
-            })
 
-            print(f"📤 ✅ atualizando metadados para sala {id_transmissao} com total_pedacos = {data['totalChunks']}")
-            
+        if host_sid:
+            print(f"♻️ Reinicializando pedaços e metadados da transmissão existente: {id_transmissao}")
+
+            # Resetando apenas os dados relevantes
+            transmissoes[host_sid]["pedacos"] = {}
+            transmissoes[host_sid]["total_pedacos"] = data["totalChunks"]
+            transmissoes[host_sid]["tipo"] = data["type"]
+            transmissoes[host_sid]["status"] = "reiniciada"
+
+            join_room(id_transmissao)
+
+            print(f"📤 ✅ Transmissão {id_transmissao} atualizada com novo total de pedaços: {data['totalChunks']}")
+
+            # Notifica os clientes da atualização
             emit("transmissao_atualizada", data, room=id_transmissao)
+
+            # 🔧 NOVO: Envia também os metadados atualizados para todo mundo na sala
+            emit("audio_metadata", {
+                "id_transmissao": id_transmissao,
+                "type": data["type"],
+                "total_pedacos": data["totalChunks"]
+            }, room=id_transmissao)
+
 
     @socketio.on("audio_chunk")
     def receber_pedaco(data):
@@ -139,6 +151,7 @@ def init_sockets(socketio):
                 "id_transmissao": id_transmissao,
                 "id_pedaco": chunk_id,
                 "dados": chunk_data,
+                "total_pedacos": total_pedacos,
                 "priority": True
             }, to=request.sid)
 
@@ -146,9 +159,15 @@ def init_sockets(socketio):
             emit("audio_processed", {
                 "id_transmissao": id_transmissao,
                 "id_pedaco": chunk_id,
-                "dados": chunk_data
+                "dados": chunk_data,
+                "total_pedacos": total_pedacos
             }, to=request.sid)
-                
+
+        emit("transmissao_iniciada", {
+            "id_transmissao": id_transmissao
+        }, to=request.sid)
+
+
     @socketio.on("controle_player")
     def controle_player(data):
         try:
