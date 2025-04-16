@@ -1,20 +1,22 @@
 // Imports das Interfaces
 import { tentarReproducao } from "./Interfaces.js";
 
+const MAQLOCAL = "192.168.1.2"
+
 // Verifica se o script está rodando em produção ou desenvolvimento
-const emProducao = !["localhost", "10.160.52.86"].includes(window.location.hostname);
+const emProducao = !["localhost", MAQLOCAL].includes(window.location.hostname);
 const URL_SERVIDOR = emProducao
- ? "https://ouca-junto.onrender.com" // URL de produção
- : "http://10.160.52.85:5000"; // URL local para desenvolvimento
+  ? "https://ouca-junto.onrender.com" // URL de produção
+  : `http://${MAQLOCAL}:5000`; // URL local para desenvolvimento
 
 // Configura o socket.io com opções de reconexão
 export const socket = io(URL_SERVIDOR, {
- transports: ["websocket", "polling"],
- secure: emProducao,
- withCredentials: true,
- reconnection: true,
- reconnectionAttempts: 5,
- reconnectionDelay: 2000,
+  transports: ["websocket", "polling"],
+  secure: emProducao,
+  withCredentials: true,
+  reconnection: true,
+  reconnectionAttempts: 5,
+  reconnectionDelay: 2000,
 });
 
 // ------------------------------------------------------------------
@@ -41,6 +43,16 @@ export const logger = {
   }
  },
  debug: (...args) => {
+  if (!emProducao) {
+   console.debug(...args);
+  }
+ },
+ groupCollapsed: (...args) => {
+  if (!emProducao) {
+    console.debug(...args);
+  }
+ },
+ groupEnd: (...args) => {
   if (!emProducao) {
    console.debug(...args);
   }
@@ -121,7 +133,7 @@ window.enviarAudio = async function () {
  ).innerText = `🔄 Aguardando áudio da transmissão ${idTransmissaoAtual}...`;
 
  // ✅ 1. Abre o grupo UMA VEZ (antes do loop)
- console.groupCollapsed(`📦 Enviando ${totalpedacos} pedaços`);
+ logger.groupCollapsed(`📦 Enviando ${totalpedacos} pedaços`);
 
  for (let i = 0; i < totalpedacos; i++) {
   const inicio = i * tamanhoPedaco;
@@ -131,7 +143,7 @@ window.enviarAudio = async function () {
   // Verifica se o ID da transmissão é válido antes de enviar
   if (!idTransmissaoAtual) {
    logger.error("❌ ID de transmissão não definido, abortando envio de pedaços.");
-   console.groupEnd(); // Fecha o grupo se houver erro
+   logger.groupEnd(); // Fecha o grupo se houver erro
    return;
   }
 
@@ -152,7 +164,7 @@ window.enviarAudio = async function () {
  }
 
  // ✅ 3. Fecha o grupo DEPOIS do loop
- console.groupEnd();
+ logger.groupEnd();
 
  entrada.value = "";
  logger.log("✅ Envio de áudio finalizado");
@@ -309,7 +321,7 @@ socket.on("audio_processed", function (dados) {
 
  // Cria um grupo colapsado para os pedaços recebidos (se for o primeiro pedaço)
  if (id_pedaco === 0) {
-  console.groupCollapsed(`📥 Recebendo ${totalPedacos} pedaços (Transmissão ${id})`);
+  logger.groupCollapsed(`📥 Recebendo ${totalPedacos} pedaços (Transmissão ${id})`);
  }
 
  // Se for o primeiro pedaço, reinicia o buffer
@@ -349,7 +361,7 @@ socket.on("audio_processed", function (dados) {
  // Se todos os pedaços foram recebidos, monta o áudio e fecha o grupo
  if (buffer.recebidos === buffer.total) {
   logger.log("📦 Todos os pedaços recebidos, montando áudio...");
-  console.groupEnd(); // Fecha o grupo de recebimento
+  logger.groupEnd(); // Fecha o grupo de recebimento
 
   // Verifica se algum pedaço está faltando
   if (buffer.pedacos.includes(null)) {
