@@ -15,35 +15,109 @@ let idTransmissaoAtual = null;
 let logInseridoNaSalaJaMostrado = false;
 let intervaloMonitoramento = null;
 let tentativasMonitoramento = 0;
-
+let ignorarSeekAte = 0;
 
 // ------------------------------------------------------------------
 window.conectarComoOuvinte = conectarComoOuvinte;
 window.sairDaTransmissao = sairDaTransmissao;
 
 // ------------------------------------------------------------------
-// Eventos do reprodutor de áudio
+
+// --- Controle de Reprodução (Play/Pause) ---
+function enviarControleReproducao(acao) {
+  const dados = {
+    action: acao,
+    currentTime: reprodutorAudio.currentTime,
+    id_transmissao: idTransmissaoAtual,
+    originador: socket.id
+  };
+  logger.log("📤 Enviando controle de reprodução:", dados);
+  socket.emit("controle_player", dados);
+}
+
+// --- Sincronização de Posição (Seek) ---
+function enviarSincronizacaoPosicao(tempo) {
+  const dados = {
+    action: "seek",
+    currentTime: tempo,
+    id_transmissao: idTransmissaoAtual,
+    originador: socket.id
+  };
+  logger.log("📤 Enviando sincronização de posição:", dados);
+  socket.emit("controle_player", dados);
+}
+
+// --- Listeners do Reprodutor de Áudio ---
 reprodutorAudio.addEventListener("play", () => {
- enviarControle("play");
+  enviarControleReproducao("play");
 });
 
 reprodutorAudio.addEventListener("pause", () => {
- enviarControle("pause");
+  enviarControleReproducao("pause");
 });
 
 reprodutorAudio.addEventListener("seeked", () => {
- const agora = Date.now();
- // Debounce: só processa seeks com >500ms de intervalo
- if (agora - ultimoSeekTime < 500) {
-  return;
- }
- ultimoSeekTime = agora;
+  const agora = Date.now();
 
- if (!estaSincronizando && estaTocando) {
-  enviarControle("seek", reprodutorAudio.currentTime);
- }
+  // Ignora seeks causados por sincronização externa
+  if (agora < ignorarSeekAte) {
+    logger.log("⏱️ Seek ignorado (sincronização externa)");
+    return;
+  }
+
+  // Debounce: requer intervalo mínimo de 500ms
+  if (agora - ultimoSeekTime < 500) {
+    logger.log("⚠️ Seek ignorado (debounce)");
+    return;
+  }
+
+  ultimoSeekTime = agora;
+
+  // Envia sincronização de posição se não estiver em processo de outra sincronização
+  if (!estaSincronizando) {
+    enviarSincronizacaoPosicao(reprodutorAudio.currentTime);
+  }
 });
 
+// --- Execução de Comandos Recebidos ---
+function executarComandoSincronizado(dados) {
+  estaSincronizando = true;
+  try {
+    // Ajusta posição sempre
+    reprodutorAudio.currentTime = dados.currentTime;
+    // Executa play/pause conforme ação
+    if (dados.action === "play") {
+      reprodutorAudio.play().catch(err => logger.warn("⚠️ Erro ao executar play:", err));
+    } else if (dados.action === "pause") {
+      reprodutorAudio.pause();
+    }
+    logger.log(`🎮 Comando remoto executado: ${dados.action} @ ${dados.currentTime}s`);
+  } catch (error) {
+    logger.error("❌ Erro ao executar comando remoto:", error);
+  }
+  estaSincronizando = false;
+}
+
+// --- Handler de eventos do socket ---
+socket.on("player_control", function(dados) {
+  // Ignora comandos originados neste cliente
+  if (dados.originador === socket.id) return;
+
+  if (!validarComando(dados)) return;
+  executarComandoSincronizado(dados);
+});
+
+
+function validarComando(dados) {
+  const COMANDOS_VALIDOS = ["play", "pause", "seek"];
+  return (
+   dados &&
+   COMANDOS_VALIDOS.includes(dados.action) &&
+   typeof dados.currentTime === "number" &&
+   dados.id_transmissao === idTransmissaoAtual
+  );
+}
+ 
 // ------------------------------------------------------------------
 // Envio de arquivo de áudio
 window.enviarAudio = async function () {
@@ -119,7 +193,7 @@ window.enviarAudio = async function () {
 
 // ------------------------------------------------------------------
 // Atualiza o rodapé com o ID da sala
-export function atualizarNavbar(id) {
+function atualizarNavbar(id) {
  const divConectar = document.getElementById("conectar");
  const divInfoSala = document.getElementById("salaInfo");
  const spanIdSala = document.getElementById("idSala");
@@ -135,7 +209,7 @@ export function atualizarNavbar(id) {
 }
 
 // Conecta como ouvinte
-export function conectarComoOuvinte() {
+function conectarComoOuvinte() {
  const input = document.getElementById("idTransmissao");
  const id = input.value.trim();
 
@@ -153,7 +227,7 @@ export function conectarComoOuvinte() {
 }
 
 // Sai da transmissão
-export function sairDaTransmissao() {
+function sairDaTransmissao() {
  if (!idTransmissaoAtual) return;
 
  logger.log("🚪 Saindo da transmissão...");
@@ -168,53 +242,6 @@ export function sairDaTransmissao() {
  idTransmissaoAtual = null;
  souAnfitriao = false;
  atualizarNavbar(null);
-}
-
-export function enviarControle(acao, tempoEspecifico = null) {
- if (estaSincronizando) {
-  logger.log("🔄 Ignorando comando durante sincronização");
-  return;
- }
-
- const dados = {
-  action: acao,
-  currentTime: tempoEspecifico !== null ? tempoEspecifico : reprodutorAudio.currentTime,
-  id_transmissao: idTransmissaoAtual,
-  originador: socket.id, // Identifica quem iniciou o comando
- };
-
- logger.log("📤 Enviando controle:", dados);
- socket.emit("controle_player", dados);
-}
-
-export function validarComando(dados) {
- const COMANDOS_VALIDOS = ["play", "pause", "seek"];
- return (
-  dados &&
-  COMANDOS_VALIDOS.includes(dados.action) &&
-  typeof dados.currentTime === "number" &&
-  dados.id_transmissao === idTransmissaoAtual
- );
-}
-
-export function executarComandoSincronizado(dados) {
- estaSincronizando = true;
-
- try {
-  // Sincroniza o tempo primeiro
-  reprodutorAudio.currentTime = dados.currentTime;
-
-  // Executa a ação (play/pause)
-  if (dados.action === "play") {
-   reprodutorAudio.play();
-  } else if (dados.action === "pause") {
-   reprodutorAudio.pause();
-  }
- } catch (error) {
-  logger.error("❌ Erro na sincronização do comando:", error);
- }
-
- estaSincronizando = false;
 }
 // ------------------------------------------------------------------
 // Eventos do socket
@@ -403,20 +430,6 @@ socket.on("iniciar_reproducao", function (dados) {
  }
 });
 
-socket.on("player_control", function (dados) {
- // Ignora comandos do próprio usuário
- if (dados.originador === socket.id) {
-  logger.log("🔄 Comando próprio ignorado");
-  return;
- }
-
- // Validação reforçada
- if (!validarComando(dados)) return;
-
- logger.log(`🎮 Controle externo: ${dados.action} @ ${dados.currentTime}s`);
-
- executarComandoSincronizado(dados);
-});
 
 
 
