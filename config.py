@@ -18,9 +18,10 @@ BASE_SOCKETIO_CONFIG = {
     "ping_interval": 20,
     "async_mode": "eventlet",
     "cors_allowed_origins": "*",
-    "logger": True,
-    "engineio_logger": True
+    "logger": False,            # desativa logs do socketio
+    "engineio_logger": False    # desativa logs do engineio
 }
+
 
 def get_server_config():
     """Obtém todas as configurações baseadas no ambiente"""
