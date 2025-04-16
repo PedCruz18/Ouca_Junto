@@ -16,6 +16,8 @@ let logInseridoNaSalaJaMostrado = false;
 let intervaloMonitoramento = null;
 let tentativasMonitoramento = 0;
 let ignorarSeekAte = 0;
+let ignorarEventosLocais = false;
+
 
 // ------------------------------------------------------------------
 window.conectarComoOuvinte = conectarComoOuvinte;
@@ -47,25 +49,29 @@ function enviarSincronizacaoPosicao(tempo) {
   socket.emit("controle_player", dados);
 }
 
-// --- Listeners do Reprodutor de Áudio ---
 reprodutorAudio.addEventListener("play", () => {
+  if (ignorarEventosLocais) return;
   enviarControleReproducao("play");
 });
 
 reprodutorAudio.addEventListener("pause", () => {
+  if (ignorarEventosLocais) return;
   enviarControleReproducao("pause");
 });
 
 reprodutorAudio.addEventListener("seeked", () => {
   const agora = Date.now();
 
-  // Ignora seeks causados por sincronização externa
+  if (ignorarEventosLocais) {
+    logger.log("⏱️ Seek ignorado (evento local desativado)");
+    return;
+  }
+
   if (agora < ignorarSeekAte) {
     logger.log("⏱️ Seek ignorado (sincronização externa)");
     return;
   }
 
-  // Debounce: requer intervalo mínimo de 500ms
   if (agora - ultimoSeekTime < 500) {
     logger.log("⚠️ Seek ignorado (debounce)");
     return;
@@ -73,29 +79,35 @@ reprodutorAudio.addEventListener("seeked", () => {
 
   ultimoSeekTime = agora;
 
-  // Envia sincronização de posição se não estiver em processo de outra sincronização
   if (!estaSincronizando) {
     enviarSincronizacaoPosicao(reprodutorAudio.currentTime);
   }
 });
 
-// --- Execução de Comandos Recebidos ---
 function executarComandoSincronizado(dados) {
+  logger.log("🧭 Executando comando sincronizado recebido:", dados);
+
   estaSincronizando = true;
+  ignorarEventosLocais = true;
+
   try {
-    // Ajusta posição sempre
     reprodutorAudio.currentTime = dados.currentTime;
-    // Executa play/pause conforme ação
+
     if (dados.action === "play") {
       reprodutorAudio.play().catch(err => logger.warn("⚠️ Erro ao executar play:", err));
     } else if (dados.action === "pause") {
       reprodutorAudio.pause();
     }
+
     logger.log(`🎮 Comando remoto executado: ${dados.action} @ ${dados.currentTime}s`);
   } catch (error) {
     logger.error("❌ Erro ao executar comando remoto:", error);
   }
-  estaSincronizando = false;
+
+  setTimeout(() => {
+    ignorarEventosLocais = false;
+    estaSincronizando = false;
+  }, 300); // Pequeno delay para evitar reemissão
 }
 
 // --- Handler de eventos do socket ---

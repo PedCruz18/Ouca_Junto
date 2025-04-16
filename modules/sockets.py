@@ -69,7 +69,6 @@ def init_sockets(socketio):
                 "total_pedacos": data["totalChunks"]
             }, room=id_transmissao)
 
-
     @socketio.on("audio_chunk")
     def receber_pedaco(data):
         id_transmissao = data.get("id_transmissao")
@@ -167,11 +166,9 @@ def init_sockets(socketio):
             "id_transmissao": id_transmissao
         }, to=request.sid)
 
-
     @socketio.on("controle_player")
     def controle_player(data):
         try:
-            # Validação reforçada
             if (not data or 
                 data.get("action") not in COMANDOS_VALIDOS or
                 not isinstance(data.get("currentTime"), (int, float)) or
@@ -183,34 +180,49 @@ def init_sockets(socketio):
             id_transmissao = data["id_transmissao"]
             host_sid = obter_host(transmissoes, id_transmissao)
 
-            # Verifica se 'total_pedacos' está presente antes de processar
             if "total_pedacos" not in transmissoes.get(host_sid, {}):
                 emit("erro_transmissao", {"mensagem": "Erro: 'total_pedacos' não definido corretamente"}, to=request.sid)
                 return
-            #print(f"🎮 Comando player recebido com total_pedacos = {transmissoes[host_sid]['total_pedacos']}")
 
-            # Adiciona timestamp do servidor
             dados_validados = {
                 **data,
                 "server_time": time(),
                 "valid": True
             }
 
-            #print(f"📡 Retransmitindo comando {data['action']} @ {data['currentTime']:.2f}s")
-            emit("player_control", dados_validados, room=data["id_transmissao"])
-            
+            print("-------------------------------------------------------------")
+            print(f"🎮 Comando de PLAYER recebido do cliente 🧑🏻‍💻 {request.sid}")
+            print(f"➡️  Ação: {data['action']}")
+            print(f"🕒 Tempo atual (cliente): {data['currentTime']:.3f}s")
+            print(f"🆔 Transmissão: {id_transmissao}")
+            print(f"🕰️ Timestamp do servidor: {dados_validados['server_time']:.3f}")
+            print("📡 Retransmitindo comando para os clientes na sala...")
+            print("-------------------------------------------------------------")
+
+            emit("player_control", dados_validados, room=id_transmissao)
+
         except Exception as e:
             print(f"🔥 Erro no controle_player: {e}\nDados: {data}")
 
-    @socketio.on("solicitar_sincronizacao")
-    def sincronizar_tempo(data):
-        id_transmissao = data.get("id_transmissao")
-        host_sid = obter_host(transmissoes, id_transmissao)
-        if not host_sid:
-            return
+            if (not data or 
+                data.get("action") not in COMANDOS_VALIDOS or
+                not isinstance(data.get("currentTime"), (int, float)) or
+                not data.get("id_transmissao")):
+                return
 
-        emit("atualizar_tempo", {
-            "id_transmissao": id_transmissao,
-            "tempo_atual": transmissoes[host_sid].get("tempo_atual", 0),
-            "server_time": time()
-        }, room=id_transmissao)
+            id_transmissao = data["id_transmissao"]
+            host_sid = obter_host(transmissoes, id_transmissao)
+
+            # Verifica se total_pedacos está ok
+            if "total_pedacos" not in transmissoes.get(host_sid, {}):
+                emit("erro_transmissao", {"mensagem": "Erro: 'total_pedacos' não definido corretamente"}, to=request.sid)
+                return
+
+            # Enriquecendo com tempo do servidor (sincronia)
+            dados_validados = {
+                **data,
+                "server_time": time(),
+                "valid": True
+            }
+
+            emit("player_control", dados_validados, room=id_transmissao)
