@@ -1,5 +1,5 @@
 import os
-from flask import Flask, jsonify
+from flask import Flask
 from flask_cors import CORS
 from flask_socketio import SocketIO
 from config import SOCKETIO_CONFIG, DEBUG_MODE, HOST, PORT, SERVER_URL, IS_PRODUCTION

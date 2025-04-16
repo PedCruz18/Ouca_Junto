@@ -1,5 +1,5 @@
 // Imports do Sistema de Áudio
-import { reprodutorAudio } from "./varsdeuso.js";
+import { reprodutorAudio } from "./SistemaAudio.js";
  
 // ---------------------------------------------------------------------------
 

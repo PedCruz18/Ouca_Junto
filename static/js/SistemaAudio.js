@@ -4,8 +4,8 @@ import { logger } from "./logprivsys.js";
 import { socket, URL_SERVIDOR } from "./ambienteini.js";
 
 // variaveis de uso
-const reprodutorAudio = document.getElementById("reprodutorAudio");
-let buffersAudios = {};
+export const reprodutorAudio = document.getElementById("reprodutorAudio");
+export let buffersAudios = {};
 let totalPedacosPorTransmissao = {};
 let estaSincronizando = false;
 let estaTocando = false;
