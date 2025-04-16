@@ -119,7 +119,7 @@ window.enviarAudio = async function () {
 
 // ------------------------------------------------------------------
 // Atualiza o rodapé com o ID da sala
-function atualizarNavbar(id) {
+export function atualizarNavbar(id) {
  const divConectar = document.getElementById("conectar");
  const divInfoSala = document.getElementById("salaInfo");
  const spanIdSala = document.getElementById("idSala");
@@ -135,7 +135,7 @@ function atualizarNavbar(id) {
 }
 
 // Conecta como ouvinte
-function conectarComoOuvinte() {
+export function conectarComoOuvinte() {
  const input = document.getElementById("idTransmissao");
  const id = input.value.trim();
 
@@ -153,7 +153,7 @@ function conectarComoOuvinte() {
 }
 
 // Sai da transmissão
-function sairDaTransmissao() {
+export function sairDaTransmissao() {
  if (!idTransmissaoAtual) return;
 
  logger.log("🚪 Saindo da transmissão...");
@@ -187,7 +187,7 @@ export function enviarControle(acao, tempoEspecifico = null) {
  socket.emit("controle_player", dados);
 }
 
-function validarComando(dados) {
+export function validarComando(dados) {
  const COMANDOS_VALIDOS = ["play", "pause", "seek"];
  return (
   dados &&
@@ -197,7 +197,7 @@ function validarComando(dados) {
  );
 }
 
-function executarComandoSincronizado(dados) {
+export function executarComandoSincronizado(dados) {
  estaSincronizando = true;
 
  try {
@@ -393,8 +393,6 @@ socket.on("audio_processed", function (dados) {
     }, 1000);
   }
 });
-
-
 
 socket.on("iniciar_reproducao", function (dados) {
  if (dados.id_transmissao === idTransmissaoAtual) {

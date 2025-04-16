@@ -1,6 +1,6 @@
 import { emProducao } from "./ambienteini.js";
 
-export const logger = {
+export let logger = {
  log: (...args) => {
   if (!emProducao) {
    console.log(...args);

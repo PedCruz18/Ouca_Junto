@@ -1,13 +1,13 @@
-const MAQLOCAL = "192.168.1.3"
+let MAQLOCAL = "192.168.1.3"
 
 // Verifica se o script está rodando em produção ou desenvolvimento
-export const emProducao = !["localhost", MAQLOCAL].includes(window.location.hostname);
-export const URL_SERVIDOR = emProducao
+export let emProducao = !["localhost", MAQLOCAL].includes(window.location.hostname);
+export let URL_SERVIDOR = emProducao
   ? "https://ouca-junto.onrender.com" // URL de produção
   : `http://${MAQLOCAL}:5000`; // URL local para desenvolvimento
 
 // Configura o socket.io com opções de reconexão
-export const socket = io(URL_SERVIDOR, {
+export let socket = io(URL_SERVIDOR, {
   transports: ["websocket", "polling"],
   secure: emProducao,
   withCredentials: true,
