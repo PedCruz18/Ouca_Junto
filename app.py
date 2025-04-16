@@ -1,8 +1,11 @@
+import eventlet
+eventlet.monkey_patch()
+
 import os
 from flask import Flask
 from flask_cors import CORS
 from flask_socketio import SocketIO
-from config import SOCKETIO_CONFIG, DEBUG_MODE, HOST, PORT, SERVER_URL, IS_PRODUCTION
+from config import SOCKETIO_CONFIG, DEBUG_MODE, HOST, PORT, IS_PRODUCTION
 from modules.routes import init_routes
 from modules.sockets import init_sockets
 
