@@ -1,28 +1,27 @@
 import os
 import socket
 
+def get_local_ip():
+    """Tenta descobrir o IP local da máquina."""
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except Exception:
+        return "127.0.0.1"
+
 # Configurações base do Socket.IO
 BASE_SOCKETIO_CONFIG = {
     "ping_timeout": 120,
     "ping_interval": 20,
     "async_mode": "eventlet",
     "cors_allowed_origins": "*",
-    "logger": False,
-    "engineio_logger": False
+    "logger": False,            # desativa logs do socketio
+    "engineio_logger": False    # desativa logs do engineio
 }
 
-def get_local_ip():
-    """Obtém o IP local da máquina"""
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    try:
-        # não precisa ser acessível, só força o sistema a descobrir o IP da máquina
-        s.connect(("10.255.255.255", 1))
-        ip = s.getsockname()[0]
-    except Exception:
-        ip = "127.0.0.1"
-    finally:
-        s.close()
-    return ip
 
 def get_server_config():
     """Obtém todas as configurações baseadas no ambiente"""

@@ -23,27 +23,37 @@ export const socket = io(URL_SERVIDOR, {
 
 export const logger = {
  log: (...args) => {
-  if (!emProducao) {
+  if (emProducao) {
    console.log(...args);
   }
  },
  warn: (...args) => {
-  if (!emProducao) {
+  if (emProducao) {
    console.warn(...args);
   }
  },
  error: (...args) => {
-  if (!emProducao) {
+  if (emProducao) {
    console.error(...args);
   }
  },
  info: (...args) => {
-  if (!emProducao) {
+  if (emProducao) {
    console.info(...args);
   }
  },
  debug: (...args) => {
-  if (!emProducao) {
+  if (emProducao) {
+   console.debug(...args);
+  }
+ },
+ groupCollapsed: (...args) => {
+  if (emProducao) {
+    console.debug(...args);
+  }
+ },
+ groupEnd: (...args) => {
+  if (emProducao) {
    console.debug(...args);
   }
  },
@@ -133,7 +143,7 @@ window.enviarAudio = async function () {
  ).innerText = `🔄 Aguardando áudio da transmissão ${idTransmissaoAtual}...`;
 
  // ✅ 1. Abre o grupo UMA VEZ (antes do loop)
- console.groupCollapsed(`📦 Enviando ${totalpedacos} pedaços`);
+ logger.groupCollapsed(`📦 Enviando ${totalpedacos} pedaços`);
 
  for (let i = 0; i < totalpedacos; i++) {
   const inicio = i * tamanhoPedaco;
@@ -143,7 +153,7 @@ window.enviarAudio = async function () {
   // Verifica se o ID da transmissão é válido antes de enviar
   if (!idTransmissaoAtual) {
    logger.error("❌ ID de transmissão não definido, abortando envio de pedaços.");
-   console.groupEnd(); // Fecha o grupo se houver erro
+   logger.groupEnd(); // Fecha o grupo se houver erro
    return;
   }
 
@@ -164,7 +174,7 @@ window.enviarAudio = async function () {
  }
 
  // ✅ 3. Fecha o grupo DEPOIS do loop
- console.groupEnd();
+ logger.groupEnd();
 
  entrada.value = "";
  logger.log("✅ Envio de áudio finalizado");
@@ -321,7 +331,7 @@ socket.on("audio_processed", function (dados) {
 
  // Cria um grupo colapsado para os pedaços recebidos (se for o primeiro pedaço)
  if (id_pedaco === 0) {
-  console.groupCollapsed(`📥 Recebendo ${totalPedacos} pedaços (Transmissão ${id})`);
+  logger.groupCollapsed(`📥 Recebendo ${totalPedacos} pedaços (Transmissão ${id})`);
  }
 
  // Se for o primeiro pedaço, reinicia o buffer
@@ -361,7 +371,7 @@ socket.on("audio_processed", function (dados) {
  // Se todos os pedaços foram recebidos, monta o áudio e fecha o grupo
  if (buffer.recebidos === buffer.total) {
   logger.log("📦 Todos os pedaços recebidos, montando áudio...");
-  console.groupEnd(); // Fecha o grupo de recebimento
+  logger.groupEnd(); // Fecha o grupo de recebimento
 
   // Verifica se algum pedaço está faltando
   if (buffer.pedacos.includes(null)) {
