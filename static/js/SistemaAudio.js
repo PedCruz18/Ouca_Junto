@@ -15,6 +15,7 @@ let logInseridoNaSalaJaMostrado = false;
 let intervaloMonitoramento = null;
 let tentativasMonitoramento = 0;
 
+
 // ------------------------------------------------------------------
 window.conectarComoOuvinte = conectarComoOuvinte;
 window.sairDaTransmissao = sairDaTransmissao;

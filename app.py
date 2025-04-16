@@ -11,7 +11,7 @@ from modules.sockets import init_sockets
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'minha-chave-secreta-dev')  # Melhor para segurança
-CORS(app)
+CORS(app, origins=[HOST, "https://ouca-junto.onrender.com"])
 
 # Socket.IO com configurações dinâmicas
 socketio = SocketIO(app, **SOCKETIO_CONFIG)

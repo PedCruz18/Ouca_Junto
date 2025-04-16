@@ -1,4 +1,4 @@
-const MAQLOCAL = "192.168.1.1"
+const MAQLOCAL = "192.168.1.3"
 
 // Verifica se o script está rodando em produção ou desenvolvimento
 export const emProducao = !["localhost", MAQLOCAL].includes(window.location.hostname);
