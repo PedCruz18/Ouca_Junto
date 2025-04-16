@@ -23,37 +23,37 @@ export const socket = io(URL_SERVIDOR, {
 
 export const logger = {
  log: (...args) => {
-  if (!emProducao) {
+  if (!emProducao, emProducao) {
    console.log(...args);
   }
  },
  warn: (...args) => {
-  if (!emProducao) {
+  if (!emProducao, emProducao) {
    console.warn(...args);
   }
  },
  error: (...args) => {
-  if (!emProducao) {
+  if (!emProducao, emProducao) {
    console.error(...args);
   }
  },
  info: (...args) => {
-  if (!emProducao) {
+  if (!emProducao, emProducao) {
    console.info(...args);
   }
  },
  debug: (...args) => {
-  if (!emProducao) {
+  if (!emProducao, emProducao) {
    console.debug(...args);
   }
  },
  groupCollapsed: (...args) => {
-  if (!emProducao) {
+  if (!emProducao, emProducao) {
     console.debug(...args);
   }
  },
  groupEnd: (...args) => {
-  if (!emProducao) {
+  if (!emProducao, emProducao) {
    console.debug(...args);
   }
  },
