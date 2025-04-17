@@ -149,7 +149,7 @@ window.enviarAudio = async function () {
 
  while (!idTransmissaoAtual) {
   logger.log("⏳ Aguardando backend criar a SALA da transmissão...");
-  await new Promise((res) => setTimeout(res, 100)); // Aguarda até o ID estar disponível
+  await new Promise((res) => setTimeout(res, 100)); 
  }
 
  socket.emit("cliente_pronto", { id_transmissao: idTransmissaoAtual });
@@ -216,21 +216,48 @@ function atualizarNavbar(id) {
 // ------------------------------------------------------------------
 
 // Conecta como ouvinte
+
 function conectarComoOuvinte() {
- const input = document.getElementById("idTransmissao");
- const id = input.value.trim();
+  const input = document.getElementById("idTransmissao");
+  const id = input.value.trim();
+  const mensagemErro = document.getElementById("mensagemErro"); // pega o elemento de erro
 
- if (!id) {
-  alert("⚠️ Por favor, insira um ID de transmissão.");
-  return;
- }
+  // Se o ID estiver vazio, exibe a mensagem de erro na página e aplica a animação
+  if (!id) {
+    mensagemErro.textContent = "Por favor, insira um ID de SALA.";  // Mensagem de erro
+    mensagemErro.style.display = "block";  // Exibe a mensagem
 
- idTransmissaoAtual = id;
- logger.log(`🎧 Conectando à transmissão ${idTransmissaoAtual}...`);
- socket.emit("cliente_pronto", { id_transmissao: idTransmissaoAtual });
+    // Aplica a animação de pulsação no campo de entrada
+    input.classList.add("erro-pulsante");
 
- atualizarNavbar(idTransmissaoAtual);
- input.value = "";
+    // Aplica a animação de pulsação no texto da mensagem de erro
+    mensagemErro.classList.add("pulsar-texto");
+
+    // Faz a mensagem de erro desaparecer após 3 segundos
+    setTimeout(() => {
+      mensagemErro.style.display = "none";
+    }, 3000);  // 3000 milissegundos = 3 segundos
+
+    // Remove a animação após 3 segundos (tempo total da animação)
+    setTimeout(() => {
+      input.classList.remove("erro-pulsante");
+      mensagemErro.classList.remove("pulsar-texto");
+    }, 3000);  // 3000 milissegundos = 3 segundos
+
+    return;
+  }
+
+  // Caso contrário, limpa qualquer mensagem de erro anterior e remove a animação
+  mensagemErro.style.display = "none";
+  input.classList.remove("erro-pulsante");
+  mensagemErro.classList.remove("pulsar-texto");
+
+  idTransmissaoAtual = id;
+  logger.log(`🎧 Conectando à transmissão ${idTransmissaoAtual}...`);
+  socket.emit("cliente_pronto", { id_transmissao: idTransmissaoAtual });
+
+  atualizarNavbar(idTransmissaoAtual);
+  input.value = "";
 }
 
 // Sai da transmissão
@@ -239,20 +266,38 @@ function sairDaTransmissao() {
 
   // Limpa os logs antes de sair (se disponível)
   if (logger.clear) {
-      logger.clear(); // limpa os logs do logger
+    logger.clear(); // limpa os logs do logger
   }
 
   logger.log("🚪 Saindo da transmissão...");
   socket.emit("sair_transmissao", { id_transmissao: idTransmissaoAtual });
 
+  // Pausa e limpa o player
   reprodutorAudio.pause();
   reprodutorAudio.src = "";
   reprodutorAudio.load();
 
-  document.getElementById("status").innerText = "🔇 Nenhuma transmissão ativa";
+  document.getElementById("status").innerText = "Status: Aguardando...";
 
-  idTransmissaoAtual = null;
+  // 🔁 Reset geral de estados e buffers
+  buffersAudios = {};
+  totalPedacosPorTransmissao = {};
+  estaSincronizando = false;
+  estaTocando = false;
   souAnfitriao = false;
+  ultimoSeekTime = 0;
+  ignorarSeekAte = 0;
+  ignorarEventosLocais = false;
+  logInseridoNaSalaJaMostrado = false;
+
+  if (intervaloMonitoramento) {
+    clearInterval(intervaloMonitoramento);
+    intervaloMonitoramento = null;
+  }
+
+  tentativasMonitoramento = 0;
+  idTransmissaoAtual = null;
+
   atualizarNavbar(null);
 }
 
@@ -261,6 +306,19 @@ function sairDaTransmissao() {
 // Eventos do socket
 
 socket.on("transmissao_iniciada", (dados) => {
+  const mensagemErro = document.getElementById("mensagemErro");
+
+  // Exibe mensagem de sucesso ao entrar na sala
+  mensagemErro.textContent = "Sala encontrada, entrando...";
+  mensagemErro.style.display = "block";
+  mensagemErro.classList.add("mensagem-sucesso");
+
+  // Remove a mensagem após 3 segundos
+  setTimeout(() => {
+    mensagemErro.style.display = "none";
+    mensagemErro.classList.remove("mensagem-sucesso");
+  }, 3000);
+
   idTransmissaoAtual = dados.id_transmissao;
 
   if (!logInseridoNaSalaJaMostrado) {
@@ -459,6 +517,29 @@ socket.on("player_control", function(dados) {
   if (!validarComando(dados)) return;
   executarComandoSincronizado(dados);
 });
+
+socket.on("erro_transmissao", (dados) => {
+  const mensagemErro = document.getElementById("mensagemErro");
+
+  // Sai da transmissão ativa, se houver
+  sairDaTransmissao();
+
+  // Exibe a mensagem de erro e aplica a animação
+  if (dados.mensagem) {
+    mensagemErro.textContent = dados.mensagem;
+    mensagemErro.style.display = "block";
+    mensagemErro.classList.add("pulsar-texto");
+
+    setTimeout(() => {
+      mensagemErro.style.display = "none";
+    }, 3000);
+
+    setTimeout(() => {
+      mensagemErro.classList.remove("pulsar-texto");
+    }, 3000);
+  }
+});
+
 
 socket.on("connect", () => {
  console.log("✅ Conectado ao servidor:", URL_SERVIDOR);

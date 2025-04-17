@@ -1,0 +1,146 @@
+/* Estilo para o input e botão dentro de #conectar */
+#conectar {
+    display: flex;
+    gap: 10px; /* Espaçamento entre o input e o botão */
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 20px; /* Espaçamento abaixo do input para separar da lista de participantes */
+}
+
+/* Estilo para o input de ID */
+#idTransmissao {
+    padding: 10px;
+    font-size: 16px;
+    border-radius: 5px;
+    border: 2px solid #ccc;
+    width: 200px;
+    transition: background-color 0.3s ease;
+}
+
+/* Animação de pulsação entre vermelho e branco (para o fundo do input) */
+@keyframes pulsarInput {
+    0% {
+        background-color: #ff6b6b;  /* Vermelho */
+    }
+    50% {
+        background-color: white;    /* Branco */
+    }
+    100% {
+        background-color: #ff6b6b;  /* Vermelho */
+    }
+}
+
+/* Aplica a animação de pulsação no input */
+#idTransmissao.erro-pulsante {
+    animation: pulsarInput 0.5s ease-in-out 6; /* 0.5s por ciclo, 6 ciclos (3 segundos) */
+}
+
+/* Estilo para o botão */
+#conectar button {
+    padding: 10px 15px;
+    background-color: #ff6b6b;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s ease;
+}
+
+#conectar button:hover {
+    background-color: #ff4757;
+}
+
+/* Estilo para #salaInfo */
+#salaInfo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    display: none; /* Mantenha o botão oculto até ser necessário */
+}
+
+#idSala {
+    font-weight: bold;
+}
+
+/* Estilo para a mensagem de erro */
+.mensagem-erro {
+    color: red;
+    display: none;
+    margin-top: 10px;
+    text-align: center;
+}
+
+/* Estilo para mensagem de sucesso */
+.mensagem-sucesso {
+    color: green;
+    display: block;
+    margin-top: 10px;
+    text-align: center;
+    font-weight: bold;
+    animation: fadeInOut 3s ease-in-out;
+}
+
+/* Animação simples de entrada e saída */
+@keyframes fadeInOut {
+    0% {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+    10% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    90% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+}
+
+/* Estilo para a lista de participantes */
+#listaParticipantes {
+    display: none; /* Mantém oculta até ser necessário */
+    margin-left: 20px;
+    color: #ffffff;
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out; /* Animação suave */
+    margin-top: 20px; /* Garantir que a lista não fique colada ao campo de entrada */
+    padding: 10px; /* Garantir que a lista tenha espaço interno */
+}
+
+/* Quando a lista for exibida */
+#listaParticipantes.exibido {
+    display: block;
+    opacity: 1;
+}
+
+/* Estilo para os itens da lista de participantes */
+#participantesLista li {
+    padding: 5px;
+    border-bottom: 1px solid #ccc;
+    list-style: none;
+}
+
+#participantesLista li:last-child {
+    border-bottom: none;
+}
+
+/* Efeito suave ao passar o mouse sobre o botão de "Sair" */
+.sair-button {
+    background-color: red;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.sair-button:hover {
+    background-color: darkred;
+    transform: scale(1.1);
+}

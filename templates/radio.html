@@ -18,25 +18,46 @@
 
     <!-- Navbar -->
     <nav class="navbar">
+
         <div class="navbar-container">
+
             <a href="#" class="navbar-brand">OuçaJunto<span class="brand-dot">.</span></a>
+
             <div class="navbar-toggle" id="mobile-menu">
                 <span class="bar"></span>
                 <span class="bar"></span>
                 <span class="bar"></span>
             </div>
+            
             <ul class="navbar-menu">
+
                 <div id="conectar">
-                    <input type="text" id="idTransmissao" placeholder="Digite o ID da Transmissão">
+                    <input type="text" id="idTransmissao" placeholder="Digite o ID da SALA">
                     <button onclick="conectarComoOuvinte()">Conectar</button>
                 </div>
-
+                
                 <div id="salaInfo" style="display: none; align-items: center;">
-                    <span id="idSala" style="margin-right: 10px; font-weight: bold;"></span>
-                    <button onclick="sairDaTransmissao()" style="background: red; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer;">Sair</button>
+                    <span id="idSala" class="id-sala"></span>
+                    <button onclick="sairDaTransmissao()" class="sair-button">Sair</button>
+                </div>                
+
+                <!-- Lista de Participantes -->
+                <div id="listaParticipantes" class="participantes-container">
+                    <strong>Participantes:</strong>
+                    <ul id="participantesLista" class="participantes-lista"></ul>
                 </div>
+
+
+                <div id="mensagemErro" class="mensagem-erro">
+                    <div id="mensagemErro" class="mensagem-erro">
+
+                    </div>                    
+                </div>                            
+
             </ul>
+        
         </div>
+
     </nav>
 
     <!-- Conteúdo Central -->
@@ -64,7 +85,7 @@
 
     <!-- Rodapé -->
     <footer>
-        <p>OuçaJunto V0.0.52 - Todos Direitos Reservados.</p>
+        <p>OuçaJunto V0.0.53 - Todos Direitos Reservados.</p>
     </footer>
 
     <!-- Scripts -->

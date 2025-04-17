@@ -1,23 +1,32 @@
-.navbar {
+/* =======================
+   NAVBAR PRINCIPAL
+   ======================= */
+   .navbar {
     width: 100%;
-    position: fixed;
+    position: fixed; /* Fixa no topo da tela */
     top: 0;
     left: 0;
-    z-index: 1000;
-    background: rgba(30, 60, 114, 0.9);
-    backdrop-filter: blur(10px);
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    z-index: 1000; /* Garante que fique acima dos demais elementos */
+    background: rgba(30, 60, 114, 0.9); /* Cor de fundo com transparência */
+    backdrop-filter: blur(10px); /* Efeito de desfoque do fundo */
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Sombra leve inferior */
 }
 
+/* =======================
+   CONTAINER DA NAVBAR
+   ======================= */
 .navbar-container {
     max-width: 1200px;
-    margin: 0 auto;
-    padding: 1rem 2rem;
+    margin: 0 auto; /* Centraliza horizontalmente */
+    padding: 1rem 2rem; /* Espaçamento interno */
     display: flex;
-    justify-content: space-between;
+    justify-content: space-between; /* Espaça os elementos entre as extremidades */
     align-items: center;
 }
 
+/* =======================
+   LOGO / MARCA DA NAVBAR
+   ======================= */
 .navbar-brand {
     color: white;
     font-size: 1.5rem;
@@ -27,38 +36,30 @@
     align-items: center;
 }
 
+/* Pontinho de destaque colorido no nome da marca */
 .brand-dot {
     color: #ff6b6b;
 }
 
+/* =======================
+   MENU DA NAVBAR
+   ======================= */
 .navbar-menu {
     display: flex;
-    list-style: none;
+    list-style: none; /* Remove bolinhas da lista */
 }
 
+/* Item individual do menu */
 .navbar-item {
-    margin-left: 2rem;
+    margin-left: 2rem; /* Espaçamento entre os itens */
 }
 
-.navbar-item a {
-    color: white;
-    text-decoration: none;
-    font-size: 1rem;
-    display: flex;
-    align-items: center;
-    transition: color 0.3s;
-}
 
-.navbar-item a i {
-    margin-right: 8px;
-}
-
-.navbar-item a:hover {
-    color: #ff6b6b;
-}
-
+/* =======================
+   BOTÃO MENU MOBILE (HAMBÚRGUER)
+   ======================= */
 .navbar-toggle {
-    display: none;
+    display: none; /* Oculto por padrão (ativado via media query) */
     cursor: pointer;
     flex-direction: column;
     justify-content: space-between;
@@ -66,6 +67,7 @@
     height: 21px;
 }
 
+/* Barras do ícone de menu hambúrguer */
 .bar {
     height: 3px;
     width: 100%;

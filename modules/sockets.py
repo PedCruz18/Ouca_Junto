@@ -1,5 +1,5 @@
 from flask import request
-from flask_socketio import emit, join_room
+from flask_socketio import emit, join_room, leave_room
 from modules.utils import gerar_id_curto, obter_host
 from time import time
 
@@ -114,7 +114,7 @@ def init_sockets(socketio):
 
         # Verifica se a transmissão existe
         if not host_sid:
-            emit("erro_transmissao", {"mensagem": "Transmissão não encontrada"}, to=request.sid)
+            emit("erro_transmissao", {"mensagem": "Sala não existe!"}, to=request.sid)
             print(f"⚠️ 🧑🏻‍� Cliente: {request.sid} tentou acessar uma transmissão inexistente: {id_transmissao}")
             return
 
@@ -165,7 +165,7 @@ def init_sockets(socketio):
         emit("transmissao_iniciada", {
             "id_transmissao": id_transmissao
         }, to=request.sid)
-
+        
     @socketio.on("controle_player")
     def controle_player(data):
         try:
@@ -226,3 +226,128 @@ def init_sockets(socketio):
             }
 
             emit("player_control", dados_validados, room=id_transmissao)
+
+    @socketio.on("sair_transmissao")
+    def sair_transmissao(data):
+        sid = request.sid
+        id_transmissao = data.get("id_transmissao")
+
+        if not id_transmissao:
+            emit("erro_transmissao", {"mensagem": "ID da transmissão não fornecido."}, to=sid)
+            return
+
+        host_sid = obter_host(transmissoes, id_transmissao)
+
+        if not host_sid:
+            emit("erro_transmissao", {"mensagem": "Transmissão não encontrada."}, to=sid)
+            return
+
+        # Se for o host
+        if sid == host_sid:
+            print(f"🚪 Host {sid} saiu manualmente da transmissão {id_transmissao}. Encerrando...")
+            emit("transmissao_encerrada", {
+                "id_transmissao": id_transmissao,
+                "mensagem": "O host encerrou a transmissão."
+            }, room=id_transmissao)
+
+            leave_room(id_transmissao)
+            del transmissoes[sid]
+
+        # Se for ouvinte
+        elif sid in transmissoes[host_sid]["clientes_prontos"]:
+            print(f"👋 Cliente {sid} saiu manualmente da transmissão {id_transmissao}.")
+            transmissoes[host_sid]["clientes_prontos"].remove(sid)
+
+            leave_room(id_transmissao)
+            emit("voce_saiu_da_transmissao", {
+                "id_transmissao": id_transmissao,
+                "mensagem": "Você saiu da transmissão."
+            }, to=sid)
+
+            # ✅ Mostra os participantes restantes
+            print(f"👥 Participantes restantes na transmissão {id_transmissao}: {transmissoes[host_sid]['clientes_prontos']}")
+
+        else:
+            print(f"⚠️ Cliente {sid} tentou sair da transmissão {id_transmissao}, mas não estava participando.")
+            emit("erro_transmissao", {"mensagem": "Você não estava participando dessa transmissão."}, to=sid)
+
+            sid = request.sid
+            id_transmissao = data.get("id_transmissao")
+
+            if not id_transmissao:
+                emit("erro_transmissao", {"mensagem": "ID da transmissão não fornecido."}, to=sid)
+                return
+
+            host_sid = obter_host(transmissoes, id_transmissao)
+
+            if not host_sid:
+                emit("erro_transmissao", {"mensagem": "Transmissão não encontrada."}, to=sid)
+                return
+
+            # Se for o host
+            if sid == host_sid:
+                print(f"🚪 Host {sid} saiu manualmente da transmissão {id_transmissao}. Encerrando...")
+                emit("transmissao_encerrada", {
+                    "id_transmissao": id_transmissao,
+                    "mensagem": "O host encerrou a transmissão."
+                }, room=id_transmissao)
+
+                leave_room(id_transmissao)
+                del transmissoes[sid]
+
+            # Se for ouvinte
+            elif sid in transmissoes[host_sid]["clientes_prontos"]:
+                print(f"👋 Cliente {sid} saiu manualmente da transmissão {id_transmissao}.")
+                transmissoes[host_sid]["clientes_prontos"].remove(sid)
+
+                leave_room(id_transmissao)
+                emit("voce_saiu_da_transmissao", {
+                    "id_transmissao": id_transmissao,
+                    "mensagem": "Você saiu da transmissão."
+                }, to=sid)
+
+                # ✅ Mostra os participantes restantes
+                print(f"👥 Participantes restantes na transmissão {id_transmissao}: {transmissoes[host_sid]['clientes_prontos']}")
+
+            else:
+                print(f"⚠️ Cliente {sid} tentou sair da transmissão {id_transmissao}, mas não estava participando.")
+                emit("erro_transmissao", {"mensagem": "Você não estava participando dessa transmissão."}, to=sid)
+
+                sid = request.sid
+                id_transmissao = data.get("id_transmissao")
+
+                if not id_transmissao:
+                    emit("erro_transmissao", {"mensagem": "ID da transmissão não fornecido."}, to=sid)
+                    return
+
+                host_sid = obter_host(transmissoes, id_transmissao)
+
+                if not host_sid:
+                    emit("erro_transmissao", {"mensagem": "Transmissão não encontrada."}, to=sid)
+                    return
+
+                # Se o cliente for o host
+                if sid == host_sid:
+                    print(f"🚪 Host {sid} saiu manualmente da transmissão {id_transmissao}. Encerrando...")
+                    emit("transmissao_encerrada", {
+                        "id_transmissao": id_transmissao,
+                        "mensagem": "O host encerrou a transmissão."
+                    }, room=id_transmissao)
+
+                    leave_room(id_transmissao)
+                    del transmissoes[sid]
+
+                # Se o cliente for ouvinte
+                elif sid in transmissoes[host_sid]["clientes_prontos"]:
+                    print(f"👋 Cliente {sid} saiu manualmente da transmissão {id_transmissao}.")
+                    transmissoes[host_sid]["clientes_prontos"].remove(sid)
+
+                    leave_room(id_transmissao)
+                    emit("voce_saiu_da_transmissao", {
+                        "id_transmissao": id_transmissao,
+                        "mensagem": "Você saiu da transmissão."
+                    }, to=sid)
+
+                else:
+                    print(f"⚠️ Cliente {sid} tentou sair da transmissão {id_transmissao}, mas não estava participando.")
+                    emit("erro_transmissao", {"mensagem": "Você não estava participando dessa transmissão."}, to=sid)
