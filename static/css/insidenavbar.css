@@ -1,201 +1,218 @@
 /* =======================
    CONTAINER DE CONEXÃO
    ======================= */
-   #conectar {
-    display: flex; /* Define o layout flexível para os elementos filhos */
-    gap: 10px; /* Define o espaçamento entre o input e o botão */
-    justify-content: center; /* Alinha os itens horizontalmente ao centro */
-    align-items: center; /* Alinha os itens verticalmente ao centro */
-    margin-bottom: 20px; /* Espaçamento abaixo do container para separar da lista de participantes */
+#conectar {
+ display: flex; /* Define o layout flexível para os elementos filhos */
+ gap: 10px; /* Define o espaçamento entre o input e o botão */
+ justify-content: center; /* Alinha os itens horizontalmente ao centro */
+ align-items: center; /* Alinha os itens verticalmente ao centro */
+ /*  margin-bottom: 20px; Espaçamento abaixo do container para separar da lista de participantes */
 }
 
 /* =======================
    INPUT DE ID DA TRANSMISSÃO
    ======================= */
 #idTransmissao {
-    padding: 10px; /* Define o espaço interno do input */
-    font-size: 16px; /* Define o tamanho da fonte */
-    border-radius: 5px; /* Arredonda as bordas */
-    border: 2px solid #ccc; /* Define a borda do input com uma cor cinza clara */
-    width: 200px; /* Define a largura do input */
-    transition: background-color 0.3s ease; /* Define uma transição suave de cor de fundo */
+ /* /* padding: 10px; /* Define o espaço interno do input */
+ font-size: 16px; /* Define o tamanho da fonte */
+ border-radius: 5px; /* Arredonda as bordas */
+ border: 2px solid #ccc; /* Define a borda do input com uma cor cinza clara */
+ width: 200px; /* Define a largura do input */
+ transition: background-color 0.3s ease; /* Define uma transição suave de cor de fundo */
 }
 
 /* =======================
    ANIMAÇÃO DE ERRO PULSANTE
    ======================= */
 @keyframes pulsarInput {
-    0% { background-color: #ff6b6b; }   /* No início, a cor de fundo é vermelha */
-    50% { background-color: white; }    /* Meio do ciclo, cor de fundo branca */
-    100% { background-color: #ff6b6b; } /* No fim, a cor de fundo volta a ser vermelha */
+ 0% {
+  background-color: #ff6b6b;
+ } /* No início, a cor de fundo é vermelha */
+ 50% {
+  background-color: white;
+ } /* Meio do ciclo, cor de fundo branca */
+ 100% {
+  background-color: #ff6b6b;
+ } /* No fim, a cor de fundo volta a ser vermelha */
 }
 
 /* Aplica a animação de erro (pulsação) no input */
 #idTransmissao.erro-pulsante {
-    animation: pulsarInput 0.5s ease-in-out 6; /* A animação dura 0.5s, faz 6 ciclos (3 segundos ao todo) */
+ animation: pulsarInput 0.5s ease-in-out 6; /* A animação dura 0.5s, faz 6 ciclos (3 segundos ao todo) */
 }
 
 /* =======================
    BOTÃO DE CONEXÃO
    ======================= */
 #conectar button {
-    padding: 10px 15px; /* Espaço interno do botão */
-    background-color: #ff6b6b; /* Cor de fundo do botão */
-    color: white; /* Cor do texto do botão */
-    border: none; /* Remove a borda padrão */
-    border-radius: 5px; /* Arredonda as bordas do botão */
-    cursor: pointer; /* Indica que o botão é clicável */
-    font-size: 16px; /* Define o tamanho da fonte */
-    transition: background-color 0.3s ease; /* Suaviza a transição de cor ao passar o mouse */
+ /* padding: 10px 15px; /* Espaço interno do botão */
+ background-color: #ff6b6b; /* Cor de fundo do botão */
+ color: white; /* Cor do texto do botão */
+ border: none; /* Remove a borda padrão */
+ border-radius: 5px; /* Arredonda as bordas do botão */
+ cursor: pointer; /* Indica que o botão é clicável */
+ font-size: 16px; /* Define o tamanho da fonte */
+ transition: background-color 0.3s ease; /* Suaviza a transição de cor ao passar o mouse */
 }
 
 /* =======================
    EFEITO DE HOVER NO BOTÃO
    ======================= */
 #conectar button:hover {
-    background-color: #ff4757; /* Altera para um tom mais escuro de vermelho quando o mouse passa sobre o botão */
+ background-color: #ff4757; /* Altera para um tom mais escuro de vermelho quando o mouse passa sobre o botão */
 }
 
 /* =======================
    INFORMAÇÕES DA SALA
    ======================= */
 #salaInfo {
-    display: flex; /* Define o layout flexível para exibir os itens em linha */
-    align-items: center; /* Alinha os itens verticalmente ao centro */
-    gap: 10px; /* Espaçamento entre os itens */
-    display: none; /* O conteúdo está oculto por padrão */
+ display: flex; /* Define o layout flexível para exibir os itens em linha */
+ align-items: center; /* Alinha os itens verticalmente ao centro */
+ gap: 10px; /* Espaçamento entre os itens */
+ display: none; /* O conteúdo está oculto por padrão */
 }
 
 /* Destaca o ID da sala com negrito */
 #idSala {
-    font-weight: bold;
+ font-weight: bold;
 }
 
 /* =======================
    MENSAGEM DE ERRO
    ======================= */
 .mensagem-erro {
-    color: red; /* Define a cor da mensagem como vermelha */
-    display: none; /* O conteúdo está oculto inicialmente */
-    margin-top: 10px; /* Espaçamento acima da mensagem */
-    text-align: center; /* Alinha o texto ao centro */
+ color: red; /* Define a cor da mensagem como vermelha */
+ display: none; /* O conteúdo está oculto inicialmente */
+ margin-top: 10px; /* Espaçamento acima da mensagem */
+ text-align: center; /* Alinha o texto ao centro */
 }
 
 /* =======================
    MENSAGEM DE SUCESSO
    ======================= */
 .mensagem-sucesso {
-    color: green; /* Define a cor da mensagem como verde */
-    display: block; /* A mensagem é exibida como um bloco */
-    margin-top: 10px; /* Espaçamento acima da mensagem */
-    text-align: center; /* Alinha o texto ao centro */
-    font-weight: bold; /* Torna o texto em negrito */
-    animation: fadeInOut 3s ease-in-out; /* Aplica a animação de fadeInOut durante 3 segundos */
+ color: green; /* Define a cor da mensagem como verde */
+ display: block; /* A mensagem é exibida como um bloco */
+ margin-top: 10px; /* Espaçamento acima da mensagem */
+ text-align: center; /* Alinha o texto ao centro */
+ font-weight: bold; /* Torna o texto em negrito */
+ animation: fadeInOut 3s ease-in-out; /* Aplica a animação de fadeInOut durante 3 segundos */
 }
 
 /* Animação de entrada e saída suave para mensagens */
 @keyframes fadeInOut {
-    0%   { opacity: 0; transform: translateY(-5px); } /* Inicialmente invisível e deslocado */
-    10%  { opacity: 1; transform: translateY(0); } /* Surge com opacidade 100% */
-    90%  { opacity: 1; } /* Mantém visível */
-    100% { opacity: 0; transform: translateY(-5px); } /* Desaparece e se desloca */
+ 0% {
+  opacity: 0;
+  transform: translateY(-5px);
+ } /* Inicialmente invisível e deslocado */
+ 10% {
+  opacity: 1;
+  transform: translateY(0);
+ } /* Surge com opacidade 100% */
+ 90% {
+  opacity: 1;
+ } /* Mantém visível */
+ 100% {
+  opacity: 0;
+  transform: translateY(-5px);
+ } /* Desaparece e se desloca */
 }
 
 /* =======================
    BOTÃO DE SAIR
    ======================= */
 .sair-button {
-    background-color: red; /* Cor de fundo vermelha */
-    color: white; /* Cor do texto branca */
-    border: none; /* Remove bordas do botão */
-    padding: 5px 10px; /* Define o espaçamento interno do botão */
-    border-radius: 5px; /* Borda arredondada */
-    cursor: pointer; /* Aponta para o clique */
-    font-size: 14px; /* Tamanho da fonte */
-    transition: background-color 0.3s ease, transform 0.2s ease; /* Suaviza transição de cor e efeito de transformação */
+ background-color: red; /* Cor de fundo vermelha */
+ color: white; /* Cor do texto branca */
+ border: none; /* Remove bordas do botão */
+ /* padding: 5px 10px; /* Define o espaçamento interno do botão */
+ border-radius: 5px; /* Borda arredondada */
+ cursor: pointer; /* Aponta para o clique */
+ font-size: 14px; /* Tamanho da fonte */
+ transition: background-color 0.3s ease, transform 0.2s ease; /* Suaviza transição de cor e efeito de transformação */
 }
 
 /* Efeito hover no botão de sair */
 .sair-button:hover {
-    background-color: darkred; /* Torna o fundo mais escuro quando o mouse passa */
-    transform: scale(1.1); /* Aumenta levemente o tamanho do botão */
+ background-color: darkred; /* Torna o fundo mais escuro quando o mouse passa */
+ transform: scale(1.1); /* Aumenta levemente o tamanho do botão */
 }
 
 /* =======================
    CONTAINER DOS PARTICIPANTES
    ======================= */
 .participantes-container {
-    display: none; /* O container está oculto inicialmente */
-    position: absolute; /* Define posição absoluta para que o container flutue sobre a tela */
-    right: 20px; /* Alinha à direita */
-    top: 100px; /* Define a distância do topo */
-    background-color: #2c3e50; /* Cor de fundo escura */
-    border-radius: 8px; /* Borda arredondada */
-    padding: 15px; /* Espaçamento interno */
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Sombra suave */
-    z-index: 1000; /* Garante que o container apareça acima de outros elementos */
-    min-width: 200px; /* Largura mínima */
-    max-width: 300px; /* Largura máxima */
-    color: #ecf0f1; /* Cor do texto */
-    overflow: hidden; /* Previne que o conteúdo ultrapasse os limites */
+ display: none; /* O container está oculto inicialmente */
+ position: absolute; /* Define posição absoluta para que o container flutue sobre a tela */
+ right: 20px; /* Alinha à direita */
+ top: 100px; /* Define a distância do topo */
+ background-color: #2c3e50; /* Cor de fundo escura */
+ border-radius: 8px; /* Borda arredondada */
+ /* padding: 15px; /* Espaçamento interno */
+ box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Sombra suave */
+ z-index: 1000; /* Garante que o container apareça acima de outros elementos */
+ min-width: 200px; /* Largura mínima */
+ max-width: 300px; /* Largura máxima */
+ color: #ecf0f1; /* Cor do texto */
+ overflow: hidden; /* Previne que o conteúdo ultrapasse os limites */
 }
 
 /* Título "Participantes" */
 .participantes-container strong {
-    display: block; /* Exibe como bloco */
-    margin-bottom: 10px; /* Espaço inferior */
-    font-size: 1.1rem; /* Tamanho da fonte */
-    color: #3498db; /* Cor azul */
-    border-bottom: 1px solid #34495e; /* Linha abaixo do título */
-    padding-bottom: 5px; /* Espaçamento abaixo da linha */
+ display: block; /* Exibe como bloco */
+ margin-bottom: 10px; /* Espaço inferior */
+ font-size: 1.1rem; /* Tamanho da fonte */
+ color: #3498db; /* Cor azul */
+ border-bottom: 1px solid #34495e; /* Linha abaixo do título */
+ /* padding-bottom: 5px; /* Espaçamento abaixo da linha */
 }
 
 /* Lista de participantes */
 .participantes-lista {
-    list-style-type: none; /* Remove os marcadores da lista */
-    padding: 0; /* Remove o padding */
-    margin: 0; /* Remove a margem */
-    max-height: 300px; /* Define uma altura máxima */
-    overflow-y: auto; /* Permite rolagem vertical */
+ list-style-type: none; /* Remove os marcadores da lista */
+ /* padding: 0; /* Remove o /* padding */
+ margin: 0; /* Remove a margem */
+ max-height: 300px; /* Define uma altura máxima */
+ overflow-y: auto; /* Permite rolagem vertical */
 }
 
 /* Itens da lista de participantes */
 .participantes-lista li {
-    padding: 8px 12px; /* Espaçamento interno */
-    margin: 3px 0; /* Margem entre os itens */
-    background-color: #34495e; /* Cor de fundo escura */
-    border-radius: 4px; /* Borda arredondada */
-    transition: all 0.3s ease; /* Transição suave de todas as propriedades */
+ /* padding: 8px 12px; /* Espaçamento interno */
+ margin: 3px 0; /* Margem entre os itens */
+ background-color: #34495e; /* Cor de fundo escura */
+ border-radius: 4px; /* Borda arredondada */
+ transition: all 0.3s ease; /* Transição suave de todas as propriedades */
 }
 
 /* =======================
    SCROLLBAR PERSONALIZADA
    ======================= */
 .participantes-lista::-webkit-scrollbar {
-    width: 6px; /* Largura da barra de rolagem */
+ width: 6px; /* Largura da barra de rolagem */
 }
 
 .participantes-lista::-webkit-scrollbar-track {
-    background: #34495e; /* Cor do fundo da barra de rolagem */
-    border-radius: 10px; /* Borda arredondada do track */
+ background: #34495e; /* Cor do fundo da barra de rolagem */
+ border-radius: 10px; /* Borda arredondada do track */
 }
 
 .participantes-lista::-webkit-scrollbar-thumb {
-    background: #3498db; /* Cor do "polegar" da barra de rolagem */
-    border-radius: 10px; /* Borda arredondada do polegar */
+ background: #3498db; /* Cor do "polegar" da barra de rolagem */
+ border-radius: 10px; /* Borda arredondada do polegar */
 }
 
 /* =======================
    RESPONSIVIDADE
    ======================= */
 @media (max-width: 768px) {
-    .participantes-container {
-        position: static; /* Altera a posição para estática em telas pequenas */
-        width: 100%; /* Largura total */
-        max-width: 100%; /* Largura máxima total */
-        margin-top: 15px; /* Espaçamento superior */
-        box-shadow: none; /* Remove a sombra */
-        border-radius: 0; /* Remove o arredondamento das bordas */
-        border-top: 1px solid #34495e; /* Adiciona uma borda no topo */
-    }
+ .participantes-container {
+  position: static; /* Altera a posição para estática em telas pequenas */
+  width: 100%; /* Largura total */
+  max-width: 100%; /* Largura máxima total */
+  margin-top: 15px; /* Espaçamento superior */
+  box-shadow: none; /* Remove a sombra */
+  border-radius: 0; /* Remove o arredondamento das bordas */
+  border-top: 1px solid #34495e; /* Adiciona uma borda no topo */
+ }
 }
