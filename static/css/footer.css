@@ -1,0 +1,16 @@
+/* ==================================================
+   FOOTER
+================================================== */
+footer {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    background-color: #2a5298;
+    color: white;
+    text-align: center;
+    padding: 10px 0;
+    font-size: 14px;
+    font-family: Arial, sans-serif;
+    box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.2);
+}
+

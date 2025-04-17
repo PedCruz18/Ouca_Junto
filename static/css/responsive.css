@@ -1,0 +1,94 @@
+/* ===== Estilos Responsivos (Mobile: até 600px) ===== */
+@media (max-width: 600px) {
+
+    /* Navbar */
+    .navbar-container {
+        padding: 1rem;
+    }
+
+    .navbar-toggle {
+        display: flex;
+    }
+
+    .navbar-menu {
+        position: fixed;
+        top: 70px;
+        left: -100%;
+        width: 100%;
+        height: calc(100vh - 70px);
+        background: rgba(30, 60, 114, 0.95);
+        flex-direction: column;
+        align-items: center;
+        padding: 2rem 0;
+        transition: left 0.3s ease;
+    }
+
+    .navbar-menu.active {
+        left: 0;
+    }
+
+    .navbar-item {
+        margin: 1rem 0;
+    }
+
+    /* Animação do ícone do menu hamburguer */
+    .navbar-toggle.active .bar:nth-child(1) {
+        transform: translateY(9px) rotate(45deg);
+    }
+
+    .navbar-toggle.active .bar:nth-child(2) {
+        opacity: 0;
+    }
+
+    .navbar-toggle.active .bar:nth-child(3) {
+        transform: translateY(-9px) rotate(-45deg);
+    }
+
+    /* Conteúdo principal */
+    .main-content {
+        margin-top: 80px;
+        width: 100%;
+        padding: 0 15px;
+    }
+
+    /* Evita scroll lateral */
+    body {
+        overflow: hidden;
+    }
+
+    /* Menu suspenso aberto */
+    .menu-aberto {
+        max-width: 90%;
+        padding: 15px;
+    }
+
+    /* Menu container */
+    .menu-container {
+        max-width: 90%;
+        width: 100%;
+    }
+
+    /* Upload de arquivos (container e elementos) */
+    .file-upload-container {
+        flex-direction: column;
+        max-width: 100%;
+        gap: 5px;
+    }
+
+    input[type="file"],
+    .send-button {
+        width: 100%;
+        font-size: 18px;
+    }
+
+    /* Imagem responsiva */
+    .minha-imagem {
+        width: 90%;
+        object-fit: contain;
+    }
+
+    /* Player de áudio */
+    audio {
+        max-width: 100%;
+    }
+}

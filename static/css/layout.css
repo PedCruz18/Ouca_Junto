@@ -1,0 +1,18 @@
+body {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background: linear-gradient(135deg, #1e3c72, #2a5298);
+    color: white;
+    text-align: center;
+    padding: 0 15px;
+    overflow-x: hidden;
+}
+
+.main-content {
+    margin-top: 80px;
+    width: 40%;
+    padding: 0 15px;
+}

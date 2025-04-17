@@ -1,11 +1,18 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
+    <meta charset="UTF-8">
     <title>OuçaJunto.</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.0.0/dist/socket.io.min.js"></script>
+
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="stylesheet" href="static/css/Rádio.css">
+
+    <!-- Estilos CSS principais -->
+    <link rel="stylesheet" href="static/css/main.css">
+
+    <!-- Socket.IO -->
+    <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.0.0/dist/socket.io.min.js"></script>
 </head>
 <body>
 
@@ -19,13 +26,11 @@
                 <span class="bar"></span>
             </div>
             <ul class="navbar-menu">
-                <!-- Campo para conectar-se a uma transmissão -->
                 <div id="conectar">
                     <input type="text" id="idTransmissao" placeholder="Digite o ID da Transmissão">
                     <button onclick="conectarComoOuvinte()">Conectar</button>
                 </div>
 
-                <!-- Exibição do ID da sala com botão de saída (inicialmente oculto) -->
                 <div id="salaInfo" style="display: none; align-items: center;">
                     <span id="idSala" style="margin-right: 10px; font-weight: bold;"></span>
                     <button onclick="sairDaTransmissao()" style="background: red; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer;">Sair</button>
@@ -34,20 +39,17 @@
         </div>
     </nav>
 
-
     <!-- Conteúdo Central -->
     <main class="main-content">
         <h1>Transmissor</h1>
 
-        <img src="static/img/cassete.png" alt="Descrição da imagem" class="minha-imagem">
+        <img src="static/img/cassete.png" alt="Cassete" class="minha-imagem">
         <audio id="reprodutorAudio" controls></audio>
 
-        <!-- Botão para abrir/fechar o menu suspenso -->
         <button class="toggle-menu" onclick="alternarMenu()">
-            <i class="fas fa-chevron-down"></i> <!-- Ícone da seta -->
+            <i class="fas fa-chevron-down"></i>
         </button>
-    
-        <!-- Menu suspenso (inicia recolhido) -->
+
         <div class="menu-container" id="uploadMenu">
             <div class="file-upload-container">
                 <input type="file" id="arquivoAudio" accept="audio/*" class="file-input">
@@ -56,21 +58,18 @@
                 </button>
             </div>
         </div>
-    
+
         <p id="status">Status: Aguardando...</p>
     </main>
 
     <!-- Rodapé -->
     <footer>
-        <p>OuçaJunto V0.0.51 - Todos Direitos Reservados.</p>
-    </footer>    
+        <p>OuçaJunto V0.0.52 - Todos Direitos Reservados.</p>
+    </footer>
 
-    <!-- Scritp do sistema de audio -->
+    <!-- Scripts -->
     <script type="module" src="static/js/SistemaAudio.js" defer></script>
-
-    <!-- Script de interfaces -->
     <script type="module" src="static/js/Interfaces.js" defer></script>
-
 
 </body>
 </html>

@@ -235,21 +235,27 @@ function conectarComoOuvinte() {
 
 // Sai da transmissão
 function sairDaTransmissao() {
- if (!idTransmissaoAtual) return;
+  if (!idTransmissaoAtual) return;
 
- logger.log("🚪 Saindo da transmissão...");
- socket.emit("sair_transmissao", { id_transmissao: idTransmissaoAtual });
+  // Limpa os logs antes de sair (se disponível)
+  if (logger.clear) {
+      logger.clear(); // limpa os logs do logger
+  }
 
- reprodutorAudio.pause();
- reprodutorAudio.src = "";
- reprodutorAudio.load();
+  logger.log("🚪 Saindo da transmissão...");
+  socket.emit("sair_transmissao", { id_transmissao: idTransmissaoAtual });
 
- document.getElementById("status").innerText = "🔇 Nenhuma transmissão ativa";
+  reprodutorAudio.pause();
+  reprodutorAudio.src = "";
+  reprodutorAudio.load();
 
- idTransmissaoAtual = null;
- souAnfitriao = false;
- atualizarNavbar(null);
+  document.getElementById("status").innerText = "🔇 Nenhuma transmissão ativa";
+
+  idTransmissaoAtual = null;
+  souAnfitriao = false;
+  atualizarNavbar(null);
 }
+
 
 // ------------------------------------------------------------------
 // Eventos do socket
