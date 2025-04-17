@@ -10,15 +10,5 @@ body {
  background: linear-gradient(135deg, #1e3c72, #2a5298); /* Degradê azul em diagonal */
  color: white; /* Cor do texto */
  text-align: center; /* Alinha o texto ao centro */
- /* padding: 0 15px;                                     /* Espaçamento lateral */
  overflow-x: hidden; /* Evita rolagem horizontal */
-}
-
-/* =======================
-   CONTEÚDO PRINCIPAL
-   ======================= */
-.main-content {
- margin-top: 80px; /* Espaço do topo (considerando a navbar fixa) */
- width: 40%; /* Largura do conteúdo principal */
- /* padding: 0 15px;                                     /* Espaço lateral interno */
 }

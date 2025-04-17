@@ -34,19 +34,3 @@
 
 /* Responsividade: media queries para adaptar a diferentes telas */
 @import url("responsive.css");
-
-/* =======================
-   CORES DEFINIDAS - ainda estou trabalhando nisso.
-   ======================= */
-:root {
-   --cor-vermelha: #ff6b6b;
-   --cor-vermelha-hover: #ff4757;
-   --cor-azul: #3498db;
-   --cor-azul-escura: #2c3e50;
-   --cor-navbar: rgba(30, 60, 114, 0.9);
-   --fundo-claro: #ecf0f1;
-   --cor-branca: #ffffff;
-   --transicao: 0.3s ease;
-   --borda-radius: 8px;
- }
- 

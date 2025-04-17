@@ -2,7 +2,7 @@
 @media (max-width: 600px) {
  /* Navbar */
  .navbar-container {
-  /* padding: 1rem; /* Reduz o preenchimento da navbar para se ajustar a telas menores */
+    padding: 1rem; /* Reduz o preenchimento da navbar para se ajustar a telas menores */
  }
 
  .navbar-toggle {
@@ -14,13 +14,10 @@
   top: 70px; /* Posiciona o menu abaixo da navbar */
   left: -100%; /* Inicialmente oculta o menu, movendo-o para fora da tela */
   width: 100%; /* O menu ocupa toda a largura da tela */
-  height: calc(
-   100vh - 70px
-  ); /* O menu ocupa a altura restante da tela, considerando a altura da navbar */
+  height: calc(100vh - 70px); /* O menu ocupa a altura restante da tela, considerando a altura da navbar */
   background: rgba(30, 60, 114, 0.95); /* Cor de fundo semi-transparente */
   flex-direction: column; /* Alinha os itens do menu verticalmente */
   align-items: center; /* Centraliza os itens dentro do menu */
-  /* padding: 2rem 0; /* Adiciona espaçamento interno no menu */
   transition: left 0.3s ease; /* Transição suave para mostrar o menu */
  }
 
@@ -49,7 +46,6 @@
  .main-content {
   margin-top: 80px; /* Garante um espaço entre o topo da tela e o conteúdo principal */
   width: 100%; /* O conteúdo ocupa toda a largura disponível */
-  /* padding: 0 15px; /* Adiciona espaçamento interno para o conteúdo */
  }
 
  /* Evita scroll lateral */
@@ -60,20 +56,6 @@
  /* Menu suspenso aberto */
  .menu-aberto {
   max-width: 90%; /* Reduz a largura do menu para 90% da tela */
-  /* padding: 15px; /* Adiciona preenchimento interno ao menu */
- }
-
- /* Menu container */
- .menu-container {
-  max-width: 90%; /* Limita a largura do container do menu a 90% */
-  width: 100%; /* Garante que o container ocupe toda a largura disponível */
- }
-
- /* Upload de arquivos (container e elementos) */
- .file-upload-container {
-  flex-direction: column; /* Organiza os elementos em uma coluna */
-  max-width: 100%; /* O container ocupa toda a largura da tela */
-  gap: 5px; /* Espaço entre os elementos */
  }
 
  input[type="file"],
@@ -82,18 +64,18 @@
   font-size: 18px; /* Aumenta o tamanho da fonte para melhor legibilidade em telas pequenas */
  }
 
- /* Imagem responsiva */
- .minha-imagem {
-  width: 90%; /* A imagem ocupa 90% da largura disponível */
-  object-fit: contain; /* Garante que a imagem se ajuste sem distorção, preservando a proporção */
- }
-
- /* Player de áudio */
- audio {
-  max-width: 100%; /* O player de áudio ocupa toda a largura disponível */
- }
-
  .bar {
   transition: transform 0.3s ease, opacity 0.3s ease;
+  padding: 0rem; /* espessura do botão burgue */
  }
+
+ .participantes-container {
+    position: static; /* Altera a posição para estática em telas pequenas */
+    width: 100%; /* Largura total */
+    max-width: 100%; /* Largura máxima total */
+    margin-top: 15px; /* Espaçamento superior */
+    box-shadow: none; /* Remove a sombra */
+    border-radius: 0; /* Remove o arredondamento das bordas */
+    border-top: 1px solid #34495e; /* Adiciona uma borda no topo */
+   }
 }

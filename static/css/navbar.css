@@ -40,13 +40,6 @@
  color: #ff6b6b; /* Cor vermelha vibrante */
 }
 
-/* =======================
-   MENU DA NAVBAR
-   ======================= */
-.navbar-menu {
- display: flex; /* Layout em linha (horizontal) */
- list-style: none; /* Remove marcadores da lista */
-}
 
 /* Item individual do menu */
 .navbar-item {
@@ -58,7 +51,7 @@
    ======================= */
 .navbar-toggle {
  display: none; /* Oculta o botão por padrão (visível em mobile via media query) */
- cursor: pointer; /* Cursor de mão ao passar por cima */
+ cursor: pointer; /* Cursor de mão ao passar por cima (caso ative no pc) */
  flex-direction: column; /* Alinha as barras verticalmente */
  justify-content: space-between; /* Espaça as barras igualmente */
  width: 30px; /* Largura total do ícone */

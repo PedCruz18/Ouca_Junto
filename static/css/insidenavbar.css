@@ -6,14 +6,12 @@
  gap: 10px; /* Define o espaçamento entre o input e o botão */
  justify-content: center; /* Alinha os itens horizontalmente ao centro */
  align-items: center; /* Alinha os itens verticalmente ao centro */
- /*  margin-bottom: 20px; Espaçamento abaixo do container para separar da lista de participantes */
 }
 
 /* =======================
    INPUT DE ID DA TRANSMISSÃO
    ======================= */
 #idTransmissao {
- /* /* padding: 10px; /* Define o espaço interno do input */
  font-size: 16px; /* Define o tamanho da fonte */
  border-radius: 5px; /* Arredonda as bordas */
  border: 2px solid #ccc; /* Define a borda do input com uma cor cinza clara */
@@ -148,7 +146,6 @@
  top: 100px; /* Define a distância do topo */
  background-color: #2c3e50; /* Cor de fundo escura */
  border-radius: 8px; /* Borda arredondada */
- /* padding: 15px; /* Espaçamento interno */
  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Sombra suave */
  z-index: 1000; /* Garante que o container apareça acima de outros elementos */
  min-width: 200px; /* Largura mínima */
@@ -164,13 +161,11 @@
  font-size: 1.1rem; /* Tamanho da fonte */
  color: #3498db; /* Cor azul */
  border-bottom: 1px solid #34495e; /* Linha abaixo do título */
- /* padding-bottom: 5px; /* Espaçamento abaixo da linha */
 }
 
 /* Lista de participantes */
 .participantes-lista {
  list-style-type: none; /* Remove os marcadores da lista */
- /* padding: 0; /* Remove o /* padding */
  margin: 0; /* Remove a margem */
  max-height: 300px; /* Define uma altura máxima */
  overflow-y: auto; /* Permite rolagem vertical */
@@ -178,41 +173,8 @@
 
 /* Itens da lista de participantes */
 .participantes-lista li {
- /* padding: 8px 12px; /* Espaçamento interno */
  margin: 3px 0; /* Margem entre os itens */
  background-color: #34495e; /* Cor de fundo escura */
  border-radius: 4px; /* Borda arredondada */
  transition: all 0.3s ease; /* Transição suave de todas as propriedades */
-}
-
-/* =======================
-   SCROLLBAR PERSONALIZADA
-   ======================= */
-.participantes-lista::-webkit-scrollbar {
- width: 6px; /* Largura da barra de rolagem */
-}
-
-.participantes-lista::-webkit-scrollbar-track {
- background: #34495e; /* Cor do fundo da barra de rolagem */
- border-radius: 10px; /* Borda arredondada do track */
-}
-
-.participantes-lista::-webkit-scrollbar-thumb {
- background: #3498db; /* Cor do "polegar" da barra de rolagem */
- border-radius: 10px; /* Borda arredondada do polegar */
-}
-
-/* =======================
-   RESPONSIVIDADE
-   ======================= */
-@media (max-width: 768px) {
- .participantes-container {
-  position: static; /* Altera a posição para estática em telas pequenas */
-  width: 100%; /* Largura total */
-  max-width: 100%; /* Largura máxima total */
-  margin-top: 15px; /* Espaçamento superior */
-  box-shadow: none; /* Remove a sombra */
-  border-radius: 0; /* Remove o arredondamento das bordas */
-  border-top: 1px solid #34495e; /* Adiciona uma borda no topo */
- }
 }

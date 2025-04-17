@@ -17,7 +17,6 @@
     position: relative;                /* Permite ajuste com o transform */
     left: 50%;                          /* Move o botão para o centro */
     transform: translateX(-50%);        /* Corrige o centro exato pela metade da largura */
-    transition: background 0.3s;        /* Transição suave da cor de fundo */
 }
 
 /* =======================
@@ -46,5 +45,4 @@
 .menu-aberto {
     max-height: 120px;                /* Define altura visível do menu */
     max-width: 70%;                   /* Mantém largura igual à versão fechada */
-    /* padding: 15px;                    /* Adiciona espaçamento interno ao abrir */
 }

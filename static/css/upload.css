@@ -12,7 +12,7 @@
    CAMPO DE UPLOAD DE ARQUIVO
    ======================= */
 input[type="file"] {
- /* padding: 10px;                   /* Espaçamento interno */
+ padding: 10px;                   /* Espaçamento interno */
  border: 2px solid #ccc; /* Borda cinza clara */
  border-radius: 5px; /* Bordas arredondadas */
  background: #fff; /* Fundo branco */
@@ -25,14 +25,13 @@ input[type="file"] {
    BOTÃO DE ENVIO
    ======================= */
 .send-button {
- /* padding: 10px 15px;             /* Espaçamento interno */
+  padding: 10px 15px; /* Espaçamento interno */
  background: #ff6b6b; /* Cor de fundo (vermelho suave) */
  color: white; /* Cor do texto */
  border: none; /* Sem borda */
  border-radius: 5px; /* Bordas arredondadas */
  font-size: 16px; /* Tamanho da fonte */
  cursor: pointer; /* Cursor de mãozinha */
- transition: background 0.3s; /* Transição suave da cor de fundo */
 }
 
 /* Efeito ao passar o mouse no botão */
