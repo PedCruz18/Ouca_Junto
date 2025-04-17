@@ -282,7 +282,7 @@ function sairDaTransmissao() {
   const divListaParticipantes = document.getElementById("listaParticipantes");
   
   listaParticipantes.innerHTML = ""; // Limpa a lista de participantes
-  listaParticipantes.style.display = "none";
+  //listaParticipantes.style.display = "none";
   divListaParticipantes.style.display = "none";
 
   document.getElementById("status").innerText = "Status: Aguardando...";
@@ -566,7 +566,6 @@ socket.on("atualizar_participantes", (data) => {
     listaContainer.appendChild(li);
   });
 });
-
 
 socket.on("connect", () => {
  console.log("✅ Conectado ao servidor:", URL_SERVIDOR);

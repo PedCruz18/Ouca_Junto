@@ -1,4 +1,4 @@
-let MAQLOCAL = "192.168.1.3"
+let MAQLOCAL = "10.160.52.85"
 
 // Verifica se o script está rodando em produção ou desenvolvimento
 export let emProducao = !["localhost", MAQLOCAL].includes(window.location.hostname);
