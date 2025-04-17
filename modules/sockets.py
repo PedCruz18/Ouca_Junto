@@ -40,6 +40,12 @@ def init_sockets(socketio):
             print("-------------------------------------------------------------")
             
             emit("transmissao_iniciada", {"id_transmissao": id_transmissao}, to=sid)
+            
+            # 👇 NOVO: Emite lista de participantes para a nova transmissão
+            emit("atualizar_participantes", {
+                "participantes": transmissoes[sid]["clientes_prontos"]
+            }, room=id_transmissao)
+            
             return
 
         # Atualização de uma transmissão existente
@@ -62,11 +68,16 @@ def init_sockets(socketio):
             # Notifica os clientes da atualização
             emit("transmissao_atualizada", data, room=id_transmissao)
 
-            # 🔧 NOVO: Envia também os metadados atualizados para todo mundo na sala
+            # Envia também os metadados atualizados para todo mundo na sala
             emit("audio_metadata", {
                 "id_transmissao": id_transmissao,
                 "type": data["type"],
                 "total_pedacos": data["totalChunks"]
+            }, room=id_transmissao)
+            
+            # 👇 NOVO: Emite lista atualizada de participantes
+            emit("atualizar_participantes", {
+                "participantes": transmissoes[host_sid]["clientes_prontos"]
             }, room=id_transmissao)
 
     @socketio.on("audio_chunk")
@@ -123,9 +134,16 @@ def init_sockets(socketio):
         # 👇 Verifica se o cliente já estava na lista antes de adicioná-lo
         if request.sid not in transmissoes[host_sid]["clientes_prontos"]:
             transmissoes[host_sid]["clientes_prontos"].append(request.sid)
-            print(f"🧑🏻‍💻 ✅ Cliente: {request.sid} entrou na SALA: {id_transmissao}")  # Só mostra se for novo
+            print(f"🧑🏻‍💻 ✅ Cliente: {request.sid} entrou na SALA: {id_transmissao}")
+            
+            # Emite a lista atualizada APENAS se era um novo cliente
+            emit("atualizar_participantes", {
+                "participantes": transmissoes[host_sid]["clientes_prontos"]
+            }, room=id_transmissao)
         else:
-            pass
+            print(f"ℹ️ Cliente {request.sid} já estava na lista de participantes")
+
+
 
         # Resto do código (envio de metadados e pedaços de áudio)...
         total_pedacos = transmissoes[host_sid].get("total_pedacos")
@@ -267,6 +285,12 @@ def init_sockets(socketio):
             # ✅ Mostra os participantes restantes
             print(f"👥 Participantes restantes na transmissão {id_transmissao}: {transmissoes[host_sid]['clientes_prontos']}")
 
+            # Notifica a sala com a nova lista de clientes
+            emit("atualizar_participantes", {
+                "participantes": transmissoes[host_sid]["clientes_prontos"]
+            }, room=id_transmissao)
+
+
         else:
             print(f"⚠️ Cliente {sid} tentou sair da transmissão {id_transmissao}, mas não estava participando.")
             emit("erro_transmissao", {"mensagem": "Você não estava participando dessa transmissão."}, to=sid)
@@ -308,6 +332,11 @@ def init_sockets(socketio):
 
                 # ✅ Mostra os participantes restantes
                 print(f"👥 Participantes restantes na transmissão {id_transmissao}: {transmissoes[host_sid]['clientes_prontos']}")
+                # Notifica a sala com a nova lista de clientes
+                emit("atualizar_participantes", {
+                    "participantes": transmissoes[host_sid]["clientes_prontos"]
+                }, room=id_transmissao)
+
 
             else:
                 print(f"⚠️ Cliente {sid} tentou sair da transmissão {id_transmissao}, mas não estava participando.")
@@ -347,6 +376,12 @@ def init_sockets(socketio):
                         "id_transmissao": id_transmissao,
                         "mensagem": "Você saiu da transmissão."
                     }, to=sid)
+
+                                        # Notifica a sala com a nova lista de clientes
+                    emit("atualizar_participantes", {
+                        "participantes": transmissoes[host_sid]["clientes_prontos"]
+                    }, room=id_transmissao)
+
 
                 else:
                     print(f"⚠️ Cliente {sid} tentou sair da transmissão {id_transmissao}, mas não estava participando.")

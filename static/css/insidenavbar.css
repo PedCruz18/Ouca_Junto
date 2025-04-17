@@ -100,34 +100,6 @@
     }
 }
 
-/* Estilo para a lista de participantes */
-#listaParticipantes {
-    display: none; /* Mantém oculta até ser necessário */
-    margin-left: 20px;
-    color: #ffffff;
-    opacity: 0;
-    transition: opacity 0.5s ease-in-out; /* Animação suave */
-    margin-top: 20px; /* Garantir que a lista não fique colada ao campo de entrada */
-    padding: 10px; /* Garantir que a lista tenha espaço interno */
-}
-
-/* Quando a lista for exibida */
-#listaParticipantes.exibido {
-    display: block;
-    opacity: 1;
-}
-
-/* Estilo para os itens da lista de participantes */
-#participantesLista li {
-    padding: 5px;
-    border-bottom: 1px solid #ccc;
-    list-style: none;
-}
-
-#participantesLista li:last-child {
-    border-bottom: none;
-}
-
 /* Efeito suave ao passar o mouse sobre o botão de "Sair" */
 .sair-button {
     background-color: red;
@@ -143,4 +115,82 @@
 .sair-button:hover {
     background-color: darkred;
     transform: scale(1.1);
+}
+
+/* Container principal */
+.participantes-container {
+    display: none;
+    position: absolute;
+    right: 20px;
+    top: 100px; /* Ajustado para garantir que a lista fique abaixo da navbar */
+    background-color: #2c3e50;
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    min-width: 200px;
+    max-width: 300px;
+    color: #ecf0f1;
+    overflow: hidden; /* Garante que o conteúdo não ultrapasse os limites */
+    }
+  /* Título "Participantes" */
+  .participantes-container strong {
+    display: block;
+    margin-bottom: 10px;
+    font-size: 1.1rem;
+    color: #3498db;
+    border-bottom: 1px solid #34495e;
+    padding-bottom: 5px;
+  }
+  
+  /* Lista de participantes */
+  .participantes-lista {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+  
+  /* Itens da lista */
+  .participantes-lista li {
+    padding: 8px 12px;
+    margin: 3px 0;
+    background-color: #34495e;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+  }
+  
+  /* Efeito hover nos itens */
+  .participantes-lista li:hover {
+    background-color: #3d566e;
+    transform: translateX(3px);
+  }
+  
+  /* Scrollbar personalizada */
+  .participantes-lista::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .participantes-lista::-webkit-scrollbar-track {
+    background: #34495e;
+    border-radius: 10px;
+  }
+  
+  .participantes-lista::-webkit-scrollbar-thumb {
+    background: #3498db;
+    border-radius: 10px;
+  }
+  
+/* Responsividade */
+@media (max-width: 768px) {
+    .participantes-container {
+        position: static;
+        width: 100%;
+        max-width: 100%;
+        margin-top: 15px;
+        box-shadow: none;
+        border-radius: 0;
+        border-top: 1px solid #34495e;
+    }
 }

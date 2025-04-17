@@ -277,6 +277,13 @@ function sairDaTransmissao() {
   reprodutorAudio.src = "";
   reprodutorAudio.load();
 
+  // Remover todos os participantes e esconder a lista
+  const listaParticipantes = document.getElementById("participantesLista");
+  const divListaParticipantes = document.getElementById("listaParticipantes");
+  
+  listaParticipantes.innerHTML = ""; // Limpa a lista de participantes
+  divListaParticipantes.classList.remove('exibido'); // Oculta a lista com animação
+
   document.getElementById("status").innerText = "Status: Aguardando...";
 
   // 🔁 Reset geral de estados e buffers
@@ -300,7 +307,6 @@ function sairDaTransmissao() {
 
   atualizarNavbar(null);
 }
-
 
 // ------------------------------------------------------------------
 // Eventos do socket
@@ -540,6 +546,26 @@ socket.on("erro_transmissao", (dados) => {
   }
 });
 
+socket.on("atualizar_participantes", (data) => {
+  const lista = data.participantes;
+  const listaContainer = document.getElementById("participantesLista");
+  const listaWrapper = document.getElementById("listaParticipantes");
+
+  listaContainer.innerHTML = "";
+
+  if (lista.length > 0) {
+    listaWrapper.style.display = "block";
+  } else {
+    listaWrapper.style.display = "none";
+  }
+
+  lista.forEach((id) => {
+    const li = document.createElement("li");
+    li.textContent = id;
+    listaContainer.appendChild(li);
+  });
+});
+
 
 socket.on("connect", () => {
  console.log("✅ Conectado ao servidor:", URL_SERVIDOR);
@@ -549,6 +575,3 @@ socket.on("connect_error", (erro) => {
  logger.error("❌ Erro de conexão:", erro.message);
 });
 
-socket.on("disconnect", (motivo) => {
- logger.warn("⚠️ Desconectado do servidor:", motivo);
-});
