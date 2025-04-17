@@ -1,13 +1,10 @@
+/* =======================
+   ESTILO DO REPRODUTOR DE AUDIO
+   ======================= */
 audio {
-    width: 100%;
-    max-width: 600px;
-    border-radius: 50px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    transition: transform 0.3s;
-}
-
-#status {
-    margin-top: 15px;
-    font-size: 1.1em;
-    font-weight: bold;
+    width: 100%; /* O áudio ocupará toda a largura disponível do contêiner */
+    max-width: 600px; /* Define um limite máximo de largura de 600px para o áudio */
+    border-radius: 50px; /* Aplica bordas arredondadas ao redor do áudio, criando um efeito de borda suave */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); /* Aplica uma sombra suave ao redor do áudio para dar profundidade */
+    transition: transform 0.3s; /* Adiciona uma transição suave de 0.3 segundos para mudanças de transformação, como rotação ou escala */
 }

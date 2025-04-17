@@ -282,7 +282,8 @@ function sairDaTransmissao() {
   const divListaParticipantes = document.getElementById("listaParticipantes");
   
   listaParticipantes.innerHTML = ""; // Limpa a lista de participantes
-  divListaParticipantes.classList.remove('exibido'); // Oculta a lista com animação
+  listaParticipantes.style.display = "none";
+  divListaParticipantes.style.display = "none";
 
   document.getElementById("status").innerText = "Status: Aguardando...";
 
@@ -319,6 +320,8 @@ socket.on("transmissao_iniciada", (dados) => {
   mensagemErro.style.display = "block";
   mensagemErro.classList.add("mensagem-sucesso");
 
+  atualizarNavbar(idTransmissaoAtual);
+
   // Remove a mensagem após 3 segundos
   setTimeout(() => {
     mensagemErro.style.display = "none";
@@ -331,8 +334,6 @@ socket.on("transmissao_iniciada", (dados) => {
     logger.log("📡 Inserido na SALA:", idTransmissaoAtual);
     logInseridoNaSalaJaMostrado = true;
   }
-
-  atualizarNavbar(idTransmissaoAtual);
 
   if (!intervaloMonitoramento) {
     tentativasMonitoramento = 0;

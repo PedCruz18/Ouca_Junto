@@ -1,0 +1,7 @@
+/* =======================
+   RÓTULO DE INFORMAÇÕES
+   ======================= */#status {
+    margin-top: 15px; /* Adiciona um espaço de 15px acima do elemento com o id "status" */
+    font-size: 1.1em; /* Define o tamanho da fonte para 1.1 vezes o tamanho padrão */
+    font-weight: bold; /* Torna o texto em "status" em negrito */
+}

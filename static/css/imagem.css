@@ -1,7 +1,10 @@
+/* =======================
+   IMAGEM CASSETE
+   ======================= */
 .minha-imagem {
-    position: relative;
-    max-width: 100%;
-    height: auto;
-    display: block;
-    margin: 0 auto;
+    position: relative; /* Define a posição da imagem como relativa, permitindo que ajustes posicionais sejam feitos em relação ao seu contêiner */
+    max-width: 100%; /* Faz com que a imagem ocupe no máximo 100% da largura do seu contêiner pai, mantendo sua responsividade */
+    height: auto; /* A altura da imagem será ajustada automaticamente para manter a proporção original */
+    display: block; /* Define a imagem como um bloco, o que evita espaçamentos indesejados abaixo da imagem (típico de elementos inline) */
+    margin: 0 auto; /* Centraliza a imagem horizontalmente no seu contêiner */
 }

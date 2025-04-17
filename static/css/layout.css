@@ -1,18 +1,24 @@
-body {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    background: linear-gradient(135deg, #1e3c72, #2a5298);
-    color: white;
-    text-align: center;
-    padding: 0 15px;
-    overflow-x: hidden;
+/* =======================
+   ESTILOS GERAIS DO BODY
+   ======================= */
+   body {
+    display: flex;                                      /* Usa flexbox para alinhar conteúdo */
+    flex-direction: column;                             /* Alinha os elementos verticalmente */
+    justify-content: center;                            /* Centraliza verticalmente */
+    align-items: center;                                /* Centraliza horizontalmente */
+    height: 100vh;                                       /* Altura total da viewport */
+    background: linear-gradient(135deg, #1e3c72, #2a5298); /* Degradê azul em diagonal */
+    color: white;                                        /* Cor do texto */
+    text-align: center;                                  /* Alinha o texto ao centro */
+    padding: 0 15px;                                     /* Espaçamento lateral */
+    overflow-x: hidden;                                  /* Evita rolagem horizontal */
 }
 
+/* =======================
+   CONTEÚDO PRINCIPAL
+   ======================= */
 .main-content {
-    margin-top: 80px;
-    width: 40%;
-    padding: 0 15px;
+    margin-top: 80px;                                    /* Espaço do topo (considerando a navbar fixa) */
+    width: 40%;                                          /* Largura do conteúdo principal */
+    padding: 0 15px;                                     /* Espaço lateral interno */
 }

@@ -1,6 +1,9 @@
+/* =======================
+   RESET
+   ======================= */
 * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: Arial, sans-serif;
+    margin: 0; /* Remove todas as margens padrão de todos os elementos */
+    padding: 0; /* Remove todos os espaçamentos internos (padding) padrão de todos os elementos */
+    box-sizing: border-box; /* Inclui bordas e o padding dentro do cálculo de largura e altura dos elementos */
+    font-family: Arial, sans-serif; /* Define a fonte padrão como Arial, ou qualquer fonte sans-serif disponível */
 }
