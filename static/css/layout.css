@@ -2,13 +2,104 @@
    ESTILOS GERAIS DO BODY
    ======================= */
 body {
- display: flex; /* Usa flexbox para alinhar conteúdo */
- flex-direction: column; /* Alinha os elementos verticalmente */
- justify-content: center; /* Centraliza verticalmente */
- align-items: center; /* Centraliza horizontalmente */
- height: 100vh; /* Altura total da viewport */
- background: linear-gradient(135deg, #1e3c72, #2a5298); /* Degradê azul em diagonal */
- color: white; /* Cor do texto */
- text-align: center; /* Alinha o texto ao centro */
- overflow-x: hidden; /* Evita rolagem horizontal */
+   display: flex; /* Usa flexbox para alinhar conteúdo */
+   flex-direction: column; /* Alinha os elementos verticalmente */
+   justify-content: center; /* Centraliza verticalmente */
+   align-items: center; /* Centraliza horizontalmente */
+   height: 100vh; /* Altura total da viewport */
+   margin: 0; /* Remove margens padrão */
+   background: linear-gradient(-45deg, #1e3c72, #2a5298, #6dd5ed, #2193b0); /* Gradiente de tons de azul */
+   background-size: 400% 400%; /* Para criar o efeito de animação */
+   color: white; /* Cor do texto */
+   text-align: center; /* Alinha o texto ao centro */
+   overflow: hidden; /* Remove rolagem vertical */
+   animation: gradientAnimation 10s ease infinite; /* Animação do gradiente */
 }
+
+@keyframes gradientAnimation {
+   0% {
+      background-position: 0% 50%;
+   }
+   50% {
+      background-position: 100% 50%;
+   }
+   100% {
+      background-position: 0% 50%;
+   }
+}
+
+/* HERO SECTION */
+.hero {
+   display: flex;
+   justify-content: center;
+   align-items: center;
+   min-height: 80vh;
+   text-align: center;
+   padding: 4rem 2rem;
+   background-size: cover;
+   color: white;
+ }
+ 
+ .hero-content h1 {
+   font-size: 3rem;
+   margin-bottom: 1rem;
+ }
+ 
+ .hero-content p {
+   font-size: 1.2rem;
+   margin-bottom: 2rem;
+   max-width: 600px;
+   margin-left: auto;
+   margin-right: auto;
+ }
+ 
+ .hero-buttons {
+   display: flex;
+   justify-content: center;
+   gap: 1rem;
+   flex-wrap: wrap;
+ }
+ 
+ /* Botões */
+ .btn {
+   padding: 0.8rem 1.6rem;
+   border: none;
+   border-radius: 30px;
+   font-weight: bold;
+   cursor: pointer;
+   text-decoration: none;
+   transition: all 0.3s ease;
+ }
+ 
+ .btn-primary {
+   background-color: rgba(30, 60, 114, 0.9);;
+   color: rgb(255, 255, 255);
+ }
+ 
+ .btn-primary:hover {
+   background-color: rgba(30, 60, 114, 0.9);;
+ }
+ 
+ .btn-secondary {
+   background-color: transparent;
+   border: 2px solid white;
+   color: white;
+ }
+ 
+ .btn-secondary:hover {
+   background-color: white;
+   color: #1e3c72;
+ }
+ 
+ /* RESPONSIVO */
+ @media (max-width: 768px) {
+   .hero-content h1 {
+     font-size: 2.2rem;
+   }
+ 
+   .hero-buttons {
+     flex-direction: column;
+     gap: 1rem;
+   }
+ }
+ 
