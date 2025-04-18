@@ -1,76 +1,68 @@
 /* =======================
    NAVBAR PRINCIPAL
    ======================= */
-   .navbar {
-    width: 100%;                               /* Ocupa toda a largura da tela */
-    position: fixed;                           /* Fixa no topo da tela mesmo ao rolar */
-    top: 0;                                     /* Alinha ao topo */
-    left: 0;                                    /* Alinha à esquerda */
-    z-index: 1000;                              /* Garante que fique acima de outros elementos */
-    background: rgba(30, 60, 114, 0.9);         /* Cor azul escura com transparência */
-    backdrop-filter: blur(10px);               /* Aplica desfoque nos elementos atrás da navbar */
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);  /* Sombra suave abaixo da navbar */
+.navbar {
+ width: 100%; /* Ocupa toda a largura da tela */
+ position: fixed; /* Fixa no topo da tela mesmo ao rolar */
+ top: 0; /* Alinha ao topo */
+ z-index: 1000; /* Garante que fique acima de outros elementos */
+ background: rgba(30, 60, 114, 0.9); /* Cor azul escura com transparência */
+ backdrop-filter: blur(10px); /* Aplica desfoque nos elementos atrás da navbar */
+ box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Sombra suave abaixo da navbar */
 }
 
 /* =======================
    CONTAINER DA NAVBAR
    ======================= */
 .navbar-container {
-    max-width: 1200px;                         /* Largura máxima do conteúdo da navbar */
-    margin: 0 auto;                            /* Centraliza horizontalmente */
-    padding: 1rem 2rem;                        /* Espaçamento interno (topo/baixo 1rem, lados 2rem) */
-    display: flex;                             /* Layout flexível */
-    justify-content: space-between;            /* Espaça os elementos entre si */
-    align-items: center;                       /* Alinha verticalmente ao centro */
+ max-width: 1200px; /* Largura máxima do conteúdo da navbar */
+ margin: 0 auto; /* Centraliza horizontalmente */
+ padding: 1rem 2rem;                        /* Espaçamento interno (topo/baixo 1rem, lados 2rem) */
+ display: flex; /* Layout flexível */
+ justify-content: space-between; /* Espaça os elementos entre si */
+ align-items: center; /* Alinha verticalmente ao centro */
 }
 
 /* =======================
    LOGO / MARCA DA NAVBAR
    ======================= */
 .navbar-brand {
-    color: white;                              /* Cor do texto branca */
-    font-size: 1.5rem;                         /* Tamanho da fonte maior */
-    font-weight: bold;                         /* Texto em negrito */
-    text-decoration: none;                     /* Remove sublinhado do link */
-    display: flex;                             /* Permite alinhar elementos internos lado a lado */
-    align-items: center;                       /* Alinha verticalmente os elementos */
+ color: white; /* Cor do texto branca */
+ font-size: 1.5rem; /* Tamanho da fonte maior */
+ font-weight: bold; /* Texto em negrito */
+ text-decoration: none; /* Remove sublinhado do link */
+ display: flex; /* Permite alinhar elementos internos lado a lado */
+ align-items: center; /* Alinha verticalmente os elementos */
 }
 
 /* Pontinho de destaque colorido no nome da marca */
 .brand-dot {
-    color: #ff6b6b;                            /* Cor vermelha vibrante */
+ color: #ff6b6b; /* Cor vermelha vibrante */
 }
 
-/* =======================
-   MENU DA NAVBAR
-   ======================= */
-.navbar-menu {
-    display: flex;                             /* Layout em linha (horizontal) */
-    list-style: none;                          /* Remove marcadores da lista */
-}
 
 /* Item individual do menu */
 .navbar-item {
-    margin-left: 2rem;                         /* Espaçamento entre os itens de menu */
+ margin-left: 2rem; /* Espaçamento entre os itens de menu */
 }
 
 /* =======================
    BOTÃO MENU MOBILE (HAMBÚRGUER)
    ======================= */
 .navbar-toggle {
-    display: none;                             /* Oculta o botão por padrão (visível em mobile via media query) */
-    cursor: pointer;                           /* Cursor de mão ao passar por cima */
-    flex-direction: column;                    /* Alinha as barras verticalmente */
-    justify-content: space-between;            /* Espaça as barras igualmente */
-    width: 30px;                                /* Largura total do ícone */
-    height: 21px;                               /* Altura total do ícone */
+ display: none; /* Oculta o botão por padrão (visível em mobile via media query) */
+ cursor: pointer; /* Cursor de mão ao passar por cima (caso ative no pc) */
+ flex-direction: column; /* Alinha as barras verticalmente */
+ justify-content: space-between; /* Espaça as barras igualmente */
+ width: 30px; /* Largura total do ícone */
+ height: 21px; /* Altura total do ícone */
 }
 
 /* Barras do ícone de menu hambúrguer */
 .bar {
-    height: 3px;                                /* Altura de cada barra */
-    width: 100%;                                /* Largura total do botão */
-    background-color: white;                    /* Cor branca das barras */
-    border-radius: 10px;                        /* Bordas arredondadas */
-    transition: all 0.3s ease;                  /* Transição suave ao interagir */
+ height: 3px; /* Altura de cada barra */
+ width: 100%; /* Largura total do botão */
+ background-color: white; /* Cor branca das barras */
+ border-radius: 10px; /* Bordas arredondadas */
+ transition: all 0.3s ease; /* Transição suave ao interagir */
 }

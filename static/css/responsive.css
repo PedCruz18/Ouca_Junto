@@ -1,94 +1,81 @@
 /* ===== Estilos Responsivos (Mobile: até 600px) ===== */
 @media (max-width: 600px) {
+ /* Navbar */
+ .navbar-container {
+    padding: 1rem; /* Reduz o preenchimento da navbar para se ajustar a telas menores */
+ }
 
-    /* Navbar */
-    .navbar-container {
-        padding: 1rem; /* Reduz o preenchimento da navbar para se ajustar a telas menores */
-    }
+ .navbar-toggle {
+  display: flex; /* Exibe o ícone do menu hamburguer quando a tela for pequena */
+ }
 
-    .navbar-toggle {
-        display: flex; /* Exibe o ícone do menu hamburguer quando a tela for pequena */
-    }
+ .navbar-menu {
+  position: fixed; /* Fixa o menu no topo da tela */
+  top: 70px; /* Posiciona o menu abaixo da navbar */
+  left: -100%; /* Inicialmente oculta o menu, movendo-o para fora da tela */
+  width: 100%; /* O menu ocupa toda a largura da tela */
+  height: calc(100vh - 70px); /* O menu ocupa a altura restante da tela, considerando a altura da navbar */
+  background: rgba(30, 60, 114, 0.95); /* Cor de fundo semi-transparente */
+  flex-direction: column; /* Alinha os itens do menu verticalmente */
+  align-items: center; /* Centraliza os itens dentro do menu */
+  transition: left 0.3s ease; /* Transição suave para mostrar o menu */
+ }
 
-    .navbar-menu {
-        position: fixed; /* Fixa o menu no topo da tela */
-        top: 70px; /* Posiciona o menu abaixo da navbar */
-        left: -100%; /* Inicialmente oculta o menu, movendo-o para fora da tela */
-        width: 100%; /* O menu ocupa toda a largura da tela */
-        height: calc(100vh - 70px); /* O menu ocupa a altura restante da tela, considerando a altura da navbar */
-        background: rgba(30, 60, 114, 0.95); /* Cor de fundo semi-transparente */
-        flex-direction: column; /* Alinha os itens do menu verticalmente */
-        align-items: center; /* Centraliza os itens dentro do menu */
-        padding: 2rem 0; /* Adiciona espaçamento interno no menu */
-        transition: left 0.3s ease; /* Transição suave para mostrar o menu */
-    }
+ .navbar-menu.active {
+  left: 0; /* Quando o menu estiver ativo, ele se move para a posição visível */
+ }
 
-    .navbar-menu.active {
-        left: 0; /* Quando o menu estiver ativo, ele se move para a posição visível */
-    }
+ .navbar-item {
+  margin: 1rem 0; /* Espaçamento vertical entre os itens do menu */
+ }
 
-    .navbar-item {
-        margin: 1rem 0; /* Espaçamento vertical entre os itens do menu */
-    }
+ /* Animação do ícone do menu hamburguer */
+ .navbar-toggle.active .bar:nth-child(1) {
+  transform: translateY(9px) rotate(45deg); /* Primeira barra do ícone rotaciona para formar um "X" */
+ }
 
-    /* Animação do ícone do menu hamburguer */
-    .navbar-toggle.active .bar:nth-child(1) {
-        transform: translateY(9px) rotate(45deg); /* Primeira barra do ícone rotaciona para formar um "X" */
-    }
+ .navbar-toggle.active .bar:nth-child(2) {
+  opacity: 0; /* A segunda barra desaparece quando o menu está aberto */
+ }
 
-    .navbar-toggle.active .bar:nth-child(2) {
-        opacity: 0; /* A segunda barra desaparece quando o menu está aberto */
-    }
+ .navbar-toggle.active .bar:nth-child(3) {
+  transform: translateY(-9px) rotate(-45deg); /* A terceira barra também rotaciona para formar um "X" */
+ }
 
-    .navbar-toggle.active .bar:nth-child(3) {
-        transform: translateY(-9px) rotate(-45deg); /* A terceira barra também rotaciona para formar um "X" */
-    }
+ /* Conteúdo principal */
+ .main-content {
+  margin-top: 80px; /* Garante um espaço entre o topo da tela e o conteúdo principal */
+  width: 100%; /* O conteúdo ocupa toda a largura disponível */
+ }
 
-    /* Conteúdo principal */
-    .main-content {
-        margin-top: 80px; /* Garante um espaço entre o topo da tela e o conteúdo principal */
-        width: 100%; /* O conteúdo ocupa toda a largura disponível */
-        padding: 0 15px; /* Adiciona espaçamento interno para o conteúdo */
-    }
+ /* Evita scroll lateral */
+ body {
+  overflow: hidden; /* Impede o scroll horizontal em telas pequenas */
+ }
 
-    /* Evita scroll lateral */
-    body {
-        overflow: hidden; /* Impede o scroll horizontal em telas pequenas */
-    }
+ /* Menu suspenso aberto */
+ .menu-aberto {
+  max-width: 90%; /* Reduz a largura do menu para 90% da tela */
+ }
 
-    /* Menu suspenso aberto */
-    .menu-aberto {
-        max-width: 90%; /* Reduz a largura do menu para 90% da tela */
-        padding: 15px; /* Adiciona preenchimento interno ao menu */
-    }
+ input[type="file"],
+ .send-button {
+  width: 100%; /* Os elementos de input e botão ocupam toda a largura disponível */
+  font-size: 18px; /* Aumenta o tamanho da fonte para melhor legibilidade em telas pequenas */
+ }
 
-    /* Menu container */
-    .menu-container {
-        max-width: 90%; /* Limita a largura do container do menu a 90% */
-        width: 100%; /* Garante que o container ocupe toda a largura disponível */
-    }
+ .bar {
+  transition: transform 0.3s ease, opacity 0.3s ease;
+  padding: 0rem; /* espessura do botão burgue */
+ }
 
-    /* Upload de arquivos (container e elementos) */
-    .file-upload-container {
-        flex-direction: column; /* Organiza os elementos em uma coluna */
-        max-width: 100%; /* O container ocupa toda a largura da tela */
-        gap: 5px; /* Espaço entre os elementos */
-    }
-
-    input[type="file"],
-    .send-button {
-        width: 100%; /* Os elementos de input e botão ocupam toda a largura disponível */
-        font-size: 18px; /* Aumenta o tamanho da fonte para melhor legibilidade em telas pequenas */
-    }
-
-    /* Imagem responsiva */
-    .minha-imagem {
-        width: 90%; /* A imagem ocupa 90% da largura disponível */
-        object-fit: contain; /* Garante que a imagem se ajuste sem distorção, preservando a proporção */
-    }
-
-    /* Player de áudio */
-    audio {
-        max-width: 100%; /* O player de áudio ocupa toda a largura disponível */
-    }
+ .participantes-container {
+    position: static; /* Altera a posição para estática em telas pequenas */
+    width: 100%; /* Largura total */
+    max-width: 100%; /* Largura máxima total */
+    margin-top: 15px; /* Espaçamento superior */
+    box-shadow: none; /* Remove a sombra */
+    border-radius: 0; /* Remove o arredondamento das bordas */
+    border-top: 1px solid #34495e; /* Adiciona uma borda no topo */
+   }
 }

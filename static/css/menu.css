@@ -17,7 +17,6 @@
     position: relative;                /* Permite ajuste com o transform */
     left: 50%;                          /* Move o botão para o centro */
     transform: translateX(-50%);        /* Corrige o centro exato pela metade da largura */
-    transition: background 0.3s;        /* Transição suave da cor de fundo */
 }
 
 /* =======================
@@ -27,7 +26,7 @@
     position: relative;                /* Posicionamento relativo ao seu contêiner */
     top: -50px;                        /* Sobe o menu um pouco em relação ao botão */
     background: rgba(30, 60, 114, 0.9);/* Fundo azul com transparência */
-    padding: 0;                        /* Sem espaçamento interno inicialmente */
+    padding: 0;                        /* PADDING TEM QUE SER ATIVO AQUI. Sem espaçamento interno inicialmente */
     border-radius: 10px;              /* Bordas arredondadas */
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Sombra sutil */
     max-height: 0;                    /* Menu fechado por padrão (sem altura visível) */
@@ -35,7 +34,7 @@
     overflow: hidden;                 /* Oculta o conteúdo quando fechado */
     transition: 
         max-height 0.5s ease-in-out,  /* Transição suave da altura */
-        padding 0.3s ease-in-out;     /* Transição suave do padding */
+        padding 0.3s ease-in-out;     /* PADDING TEM QUE SER ATIVO AQUI. Transição suave do padding */
     left: 50%;                        /* Centraliza horizontalmente */
     transform: translateX(-50%);      /* Corrige o alinhamento exato ao centro */
 }
@@ -46,5 +45,4 @@
 .menu-aberto {
     max-height: 120px;                /* Define altura visível do menu */
     max-width: 70%;                   /* Mantém largura igual à versão fechada */
-    padding: 15px;                    /* Adiciona espaçamento interno ao abrir */
 }
