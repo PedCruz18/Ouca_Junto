@@ -28,7 +28,22 @@ window.sairDaTransmissao = sairDaTransmissao;
 
 reprodutorAudio.addEventListener("play", () => {
   if (ignorarEventosLocais) return;
-  enviarControleReproducao("play");
+  try {
+    enviarControleReproducao("play");
+    drawVisualizer();
+  } catch (error) {
+    logger.error("❌ Erro ao iniciar reprodução ou visualizador:", error);
+  }
+});
+
+document.addEventListener("click", () => {
+  if (audioContext.state === "suspended") {
+    audioContext.resume().then(() => {
+      reprodutorAudio.play().catch((err) => {
+        logger.warn("🔴 Falha ao reproduzir após interação:", err);
+      });
+    });
+  }
 });
 
 reprodutorAudio.addEventListener("pause", () => {
@@ -311,6 +326,105 @@ function sairDaTransmissao() {
   atualizarNavbar(null);
 }
 
+const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+const audioElement = document.getElementById("reprodutorAudio");
+const canvas = document.getElementById("visualizer");
+const canvasContext = canvas.getContext("2d");
+
+// Configurações do canvas
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+// Conecta o áudio ao contexto de análise
+const audioSource = audioContext.createMediaElementSource(audioElement);
+const analyser = audioContext.createAnalyser();
+audioSource.connect(analyser);
+analyser.connect(audioContext.destination);
+
+// Configurações do analisador
+analyser.fftSize = 256; // Define o tamanho da FFT (mais alto = mais barras)
+const bufferLength = analyser.frequencyBinCount;
+const dataArray = new Uint8Array(bufferLength);
+
+function drawVisualizer() {
+  requestAnimationFrame(drawVisualizer);
+
+  // Limpa o canvas
+  canvasContext.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Obtém os dados de frequência
+  analyser.getByteFrequencyData(dataArray);
+
+  // Configurações das barras
+  const barWidth = (canvas.width / bufferLength) * 1.25; // Ajusta a largura das barras
+  let barHeight;
+  let x = 0;
+
+  // Desenha as barras de baixo para cima (lado original)
+  for (let i = 0; i < bufferLength; i++) {
+      barHeight = dataArray[i];
+
+      const red = (barHeight + 100) % 255;
+      const green = (barHeight * 2) % 255;
+      const blue = 255 - barHeight;
+
+      canvasContext.fillStyle = `rgb(${red}, ${green}, ${blue})`;
+      canvasContext.fillRect(x, canvas.height - barHeight, barWidth, barHeight); // Desenha de baixo para cima
+
+      x += barWidth + 1;
+  }
+
+  // Redefine a posição inicial para o lado oposto
+  x = canvas.width;
+
+  // Desenha as barras de baixo para cima (espelhadas)
+  for (let i = 0; i < bufferLength; i++) {
+      barHeight = dataArray[i];
+
+      const red = (barHeight + 100) % 255;
+      const green = (barHeight * 2) % 255;
+      const blue = 255 - barHeight;
+
+      canvasContext.fillStyle = `rgb(${red}, ${green}, ${blue})`;
+      canvasContext.fillRect(x - barWidth, canvas.height - barHeight, barWidth, barHeight); // Desenha de baixo para cima (espelhadas)
+
+      x -= barWidth + 1;
+  }
+
+  // Redefine a posição inicial para desenhar de cima para baixo
+  x = 0;
+
+  // Desenha as barras de cima para baixo (lado original)
+  for (let i = 0; i < bufferLength; i++) {
+      barHeight = dataArray[i];
+
+      const red = (barHeight + 100) % 255;
+      const green = (barHeight * 2) % 255;
+      const blue = 255 - barHeight;
+
+      canvasContext.fillStyle = `rgb(${red}, ${green}, ${blue})`;
+      canvasContext.fillRect(x, 0, barWidth, barHeight); // Desenha de cima para baixo
+
+      x += barWidth + 1;
+  }
+
+  // Redefine a posição inicial para o lado oposto
+  x = canvas.width;
+
+  // Desenha as barras de cima para baixo (espelhadas)
+  for (let i = 0; i < bufferLength; i++) {
+      barHeight = dataArray[i];
+
+      const red = (barHeight + 100) % 255;
+      const green = (barHeight * 2) % 255;
+      const blue = 255 - barHeight;
+
+      canvasContext.fillStyle = `rgb(${red}, ${green}, ${blue})`;
+      canvasContext.fillRect(x - barWidth, 0, barWidth, barHeight); // Desenha de cima para baixo (espelhadas)
+
+      x -= barWidth + 1;
+  }
+}
 // ------------------------------------------------------------------
 // Eventos do socket
 

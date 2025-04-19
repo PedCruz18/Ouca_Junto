@@ -8,8 +8,9 @@
    font-family: Arial, sans-serif; /* Define a fonte padrão como Arial, ou qualquer fonte sans-serif disponível */
 }
 
+
 /* =======================
-   CORES DEFINIDAS - ainda estou trabalhando nisso.
+   CORES DEFINIDAS - ainda estou trabalhando nisso...
    ======================= */
    :root {
       --cor-vermelha: #ff6b6b;
@@ -22,4 +23,4 @@
       --transicao: 0.3s ease;
       --borda-radius: 8px;
     }
-    
+   
