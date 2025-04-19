@@ -1,8 +1,8 @@
 // Imports do Sistema de Áudio
 import { reprodutorAudio } from "./SistemaAudio.js";
+import { logger } from "./logprivsys.js";
  
 // ---------------------------------------------------------------------------
-
 // Botão do menu mobile
 document.getElementById("mobile-menu").addEventListener("click", function () {
  this.classList.toggle("active");
@@ -59,6 +59,54 @@ window.alternarMenu = function () {
     menu.classList.toggle("menu-aberto");
 };
 
+
+export function mostrarMenu() {
+    const menu = document.getElementById("uploadMenu");
+    const toggleButton = document.querySelector(".toggle-menu");
+    const tituloPrincipal = document.querySelector(".titulo-principal");
+    const visualizer = document.querySelector(".visualizer");
+
+    // Torna o menu visível
+    menu.style.transition = "opacity 0.5s ease, visibility 0.5s ease";
+    menu.style.opacity = "1";
+
+    // Adiciona fade ao mudar o fundo do visualizer
+    visualizer.style.transition = "background 0.5s ease";
+    visualizer.style.background = "transparent";
+
+    // Torna os textos dos botões visíveis e inicia a animação
+    toggleButton.style.transition = "opacity 0.5s ease, visibility 0.5s ease";
+    toggleButton.style.opacity = "1";
+    toggleButton.style.visibility = "visible";
+
+    // Torna o título principal visível
+    tituloPrincipal.style.transition = "opacity 0.5s ease";
+    tituloPrincipal.style.opacity = "1";
+}
+
+export function ocultarMenu() {
+    const menu = document.getElementById("uploadMenu");
+    const toggleButton = document.querySelector(".toggle-menu");
+    const tituloPrincipal = document.querySelector(".titulo-principal");
+    const visualizer = document.querySelector(".visualizer");
+
+    // Torna o menu invisível
+    menu.style.transition = "opacity 0.5s ease, visibility 0.5s ease";
+    menu.style.opacity = "0";
+
+    // Adiciona fade ao mudar o fundo do visualizer
+    visualizer.style.transition = "background 0.5s ease";
+    visualizer.style.background = "rgba(0, 0, 0, 0.8)";
+
+    // Torna os textos dos botões invisíveis
+    toggleButton.style.transition = "opacity 0.5s ease";
+    toggleButton.style.opacity = "0";
+
+    // Torna o título principal invisível
+    tituloPrincipal.style.transition = "opacity 0.5s ease";
+    tituloPrincipal.style.opacity = "0";
+}
+
 function alterarTextoComAnimacao(elemento, novoTexto) {
     // Define a transição para opacidade
     elemento.style.transition = "opacity 0.5s ease";
@@ -79,14 +127,14 @@ export async function tentarReproducao() {
  try {
     await reprodutorAudio.play();
  } catch (e) {
-    console.log("Reprodução bloqueada, aguardando interação.");
+    logger.log("Reprodução bloqueada, aguardando interação.");
     document.body.addEventListener(
      "click",
      async () => {
         try {
          await reprodutorAudio.play();
         } catch (error) {
-         console.error("Erro ao tentar reproduzir o áudio:", error);
+         logger.error("Erro ao tentar reproduzir o áudio:", error);
         }
      },
      { once: true }

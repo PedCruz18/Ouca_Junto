@@ -1,7 +1,8 @@
 // Imports das Interfaces
-import { tentarReproducao, atualizarStatusComAnimacao, descerStatus, subirStatus } from "./Interfaces.js";
+import { tentarReproducao, atualizarStatusComAnimacao, descerStatus, subirStatus, mostrarMenu, ocultarMenu } from "./Interfaces.js";
 import { logger } from "./logprivsys.js";
 import { socket, URL_SERVIDOR } from "./ambienteini.js";
+import { audioContext, drawVisualizer } from "./efeitoaud.js";
 
 // variaveis de uso
 export const reprodutorAudio = document.getElementById("reprodutorAudio");
@@ -22,19 +23,7 @@ let ignorarEventosLocais = false;
 // ------------------------------------------------------------------
 window.conectarComoOuvinte = conectarComoOuvinte;
 window.sairDaTransmissao = sairDaTransmissao;
-
 // ------------------------------------------------------------------
-
-
-reprodutorAudio.addEventListener("play", () => {
-  if (ignorarEventosLocais) return;
-  try {
-    enviarControleReproducao("play");
-    drawVisualizer();
-  } catch (error) {
-    logger.error("❌ Erro ao iniciar reprodução ou visualizador:", error);
-  }
-});
 
 document.addEventListener("click", () => {
   if (audioContext.state === "suspended") {
@@ -46,9 +35,37 @@ document.addEventListener("click", () => {
   }
 });
 
-reprodutorAudio.addEventListener("pause", () => {
+reprodutorAudio.addEventListener("play", () => {
   if (ignorarEventosLocais) return;
+  try {
+    enviarControleReproducao("play");
+    drawVisualizer();
+  } catch (error) {
+    logger.error("❌ Erro ao iniciar reprodução ou visualizador:", error);
+  }
+});
+
+reprodutorAudio.addEventListener("pause", () => {
+  logger.log("⏸️ Evento de pausa acionado."); // Log de acionamento
+  if (ignorarEventosLocais) {
+    mostrarMenu(); // Mostrar menu se ignorar eventos locais
+    logger.log("⏸️ Ignorando evento de pausa (evento local desativado)."); // Log de ignorar evento
+    return;
+  }
   enviarControleReproducao("pause");
+  logger.log("📤 Controle de reprodução 'pause' enviado."); // Log de envio de controle
+});
+
+reprodutorAudio.addEventListener("timeupdate", () => {
+  if (!reprodutorAudio.paused && reprodutorAudio.currentTime > 0) {
+    //logger.log("🎵 O áudio está tocando.");
+    ocultarMenu(); // Ocultar menu ao tocar
+  }
+});
+
+reprodutorAudio.addEventListener("pause", () => {
+  //logger.log("⏸️ O áudio está pausado.");
+  mostrarMenu(); // Mostrar menu ao pausar
 });
 
 reprodutorAudio.addEventListener("seeked", () => {
@@ -324,107 +341,10 @@ function sairDaTransmissao() {
   idTransmissaoAtual = null;
 
   atualizarNavbar(null);
+  mostrarMenu();
 }
 
-const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-const audioElement = document.getElementById("reprodutorAudio");
-const canvas = document.getElementById("visualizer");
-const canvasContext = canvas.getContext("2d");
 
-// Configurações do canvas
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
-
-// Conecta o áudio ao contexto de análise
-const audioSource = audioContext.createMediaElementSource(audioElement);
-const analyser = audioContext.createAnalyser();
-audioSource.connect(analyser);
-analyser.connect(audioContext.destination);
-
-// Configurações do analisador
-analyser.fftSize = 256; // Define o tamanho da FFT (mais alto = mais barras)
-const bufferLength = analyser.frequencyBinCount;
-const dataArray = new Uint8Array(bufferLength);
-
-function drawVisualizer() {
-  requestAnimationFrame(drawVisualizer);
-
-  // Limpa o canvas
-  canvasContext.clearRect(0, 0, canvas.width, canvas.height);
-
-  // Obtém os dados de frequência
-  analyser.getByteFrequencyData(dataArray);
-
-  // Configurações das barras
-  const barWidth = (canvas.width / bufferLength) * 1.25; // Ajusta a largura das barras
-  let barHeight;
-  let x = 0;
-
-  // Desenha as barras de baixo para cima (lado original)
-  for (let i = 0; i < bufferLength; i++) {
-      barHeight = dataArray[i];
-
-      const red = (barHeight + 100) % 255;
-      const green = (barHeight * 2) % 255;
-      const blue = 255 - barHeight;
-
-      canvasContext.fillStyle = `rgb(${red}, ${green}, ${blue})`;
-      canvasContext.fillRect(x, canvas.height - barHeight, barWidth, barHeight); // Desenha de baixo para cima
-
-      x += barWidth + 1;
-  }
-
-  // Redefine a posição inicial para o lado oposto
-  x = canvas.width;
-
-  // Desenha as barras de baixo para cima (espelhadas)
-  for (let i = 0; i < bufferLength; i++) {
-      barHeight = dataArray[i];
-
-      const red = (barHeight + 100) % 255;
-      const green = (barHeight * 2) % 255;
-      const blue = 255 - barHeight;
-
-      canvasContext.fillStyle = `rgb(${red}, ${green}, ${blue})`;
-      canvasContext.fillRect(x - barWidth, canvas.height - barHeight, barWidth, barHeight); // Desenha de baixo para cima (espelhadas)
-
-      x -= barWidth + 1;
-  }
-
-  // Redefine a posição inicial para desenhar de cima para baixo
-  x = 0;
-
-  // Desenha as barras de cima para baixo (lado original)
-  for (let i = 0; i < bufferLength; i++) {
-      barHeight = dataArray[i];
-
-      const red = (barHeight + 100) % 255;
-      const green = (barHeight * 2) % 255;
-      const blue = 255 - barHeight;
-
-      canvasContext.fillStyle = `rgb(${red}, ${green}, ${blue})`;
-      canvasContext.fillRect(x, 0, barWidth, barHeight); // Desenha de cima para baixo
-
-      x += barWidth + 1;
-  }
-
-  // Redefine a posição inicial para o lado oposto
-  x = canvas.width;
-
-  // Desenha as barras de cima para baixo (espelhadas)
-  for (let i = 0; i < bufferLength; i++) {
-      barHeight = dataArray[i];
-
-      const red = (barHeight + 100) % 255;
-      const green = (barHeight * 2) % 255;
-      const blue = 255 - barHeight;
-
-      canvasContext.fillStyle = `rgb(${red}, ${green}, ${blue})`;
-      canvasContext.fillRect(x - barWidth, 0, barWidth, barHeight); // Desenha de cima para baixo (espelhadas)
-
-      x -= barWidth + 1;
-  }
-}
 // ------------------------------------------------------------------
 // Eventos do socket
 
@@ -525,7 +445,7 @@ socket.on("audio_metadata", function (dados) {
       clearInterval(verificarRecebimento); // Para o intervalo quando todos os pedaços forem recebidos
       setTimeout(() => {
         descerStatus(); // Executa a animação de Descer o status após 3 segundos
-        console.log("Descer status executado após todos os pedaços serem recebidos e 3 segundos.");
+        logger.log("Descer status executado após todos os pedaços serem recebidos e 3 segundos.");
       }, 3000); // Aguarda 3 segundos antes de descer o status
     }
   }, 1000); // Verifica a cada 1 segundo
