@@ -5,10 +5,12 @@ footer {
     position: fixed; /* Define que o rodapé ficará fixo na tela */
     bottom: 0; /* Posiciona o rodapé na parte inferior da tela */
     width: 100%; /* Define que o rodapé ocupará toda a largura da tela */
-    background-color: #2a5298; /* Cor de fundo do rodapé (um tom de azul) */
-    color: white; /* Cor do texto do rodapé (branco) */
+    height: 30px; /* Define a altura fixa do rodapé */
+    background-color: #2a5298; /* Cor de fundo do rodapé */
+    color: white; /* Cor do texto do rodapé */
     text-align: center; /* Alinha o texto do rodapé ao centro */
     font-size: 14px; /* Define o tamanho da fonte */
-    font-family: Arial, sans-serif; /* Define a fonte do rodapé como Arial, ou qualquer outra sans-serif disponível */
+    font-family: Arial, sans-serif; /* Define a fonte do rodapé */
     box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.2); /* Adiciona uma sombra suave acima do rodapé */
+    z-index: 500; /* Garante que o rodapé fique abaixo do reprodutor */
 }

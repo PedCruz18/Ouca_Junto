@@ -1,10 +1,39 @@
 /* =======================
-   ESTILO DO REPRODUTOR DE AUDIO
+   ESTILO MODERNO DO REPRODUTOR DE ÁUDIO
    ======================= */
 audio {
     width: 100%; /* O áudio ocupará toda a largura disponível do contêiner */
-    max-width: 600px; /* Define um limite máximo de largura de 600px para o áudio */
-    border-radius: 50px; /* Aplica bordas arredondadas ao redor do áudio, criando um efeito de borda suave */
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); /* Aplica uma sombra suave ao redor do áudio para dar profundidade */
-    transition: transform 0.3s; /* Adiciona uma transição suave de 0.3 segundos para mudanças de transformação, como rotação ou escala */
+    max-width: 600px; /* Define um limite máximo de largura de 600px */
+    transition: transform 0.3s, box-shadow 0.3s; /* Transições suaves para transformações e sombras */
+}
+
+audio::-webkit-media-controls-panel {
+    background-color: #ffffff; /* Fundo dos controles */
+    border-radius: 12px; /* Bordas arredondadas nos controles */
+}
+
+audio::-webkit-media-controls-play-button,
+audio::-webkit-media-controls-volume-slider {
+    filter: brightness(0.8); /* Controles com leve opacidade */
+    transition: filter 0.3s; /* Transição suave ao interagir */
+}
+
+audio::-webkit-media-controls-play-button:hover,
+audio::-webkit-media-controls-volume-slider:hover {
+    filter: brightness(1); /* Controles mais claros ao passar o mouse */
+}
+
+.audio-fixo {
+    position: fixed; /* Fixa o reprodutor na tela */
+    bottom: 50px; /* Define a distância do reprodutor em relação ao rodapé */
+    left: 50%; /* Centraliza horizontalmente */
+    transform: translateX(-50%); /* Ajusta o alinhamento central */
+    width: 90%; /* Define a largura do reprodutor */
+    max-width: 600px; /* Limita a largura máxima */
+    z-index: 1000; /* Garante que o reprodutor fique acima de outros elementos */
+    background-color: #ffffff; /* Fundo branco */
+    border: 1px solid #ddd; /* Borda sutil */
+    border-radius: 12px; /* Bordas arredondadas */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Sombra para destaque */
+    padding: 10px; /* Espaçamento interno */
 }

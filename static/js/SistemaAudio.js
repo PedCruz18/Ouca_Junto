@@ -1,5 +1,5 @@
 // Imports das Interfaces
-import { tentarReproducao } from "./Interfaces.js";
+import { tentarReproducao, atualizarStatusComAnimacao, descerStatus, subirStatus } from "./Interfaces.js";
 import { logger } from "./logprivsys.js";
 import { socket, URL_SERVIDOR } from "./ambienteini.js";
 
@@ -135,8 +135,6 @@ window.enviarAudio = async function () {
   return;
  }
 
- document.getElementById("status").innerText = "Preparando envio...";
-
  const tamanhoPedaco = 1024 * 512;
  const totalpedacos = Math.ceil(arquivo.size / tamanhoPedaco);
  logger.log(`⬆️✅ Total de pedaços a enviar: ${totalpedacos}`);
@@ -197,20 +195,25 @@ window.enviarAudio = async function () {
 
 // ------------------------------------------------------------------
 
-// Atualiza o rodapé com o ID da sala
 function atualizarNavbar(id) {
- const divConectar = document.getElementById("conectar");
- const divInfoSala = document.getElementById("salaInfo");
- const spanIdSala = document.getElementById("idSala");
+  const connectContainer = document.querySelector("#conectar-container");
+  const salasContainer = document.querySelector("#salaInfo-container");
+  const spanIdSala = document.querySelector("#idSala");
 
- if (id) {
-  divConectar.style.display = "none";
-  divInfoSala.style.display = "flex";
-  spanIdSala.innerText = `Sala: ${id}`;
- } else {
-  divConectar.style.display = "flex";
-  divInfoSala.style.display = "none";
- }
+  if (id) {
+      // Oculta o container de conexão
+      connectContainer.style.display = "none";
+
+      // Exibe o container de informações da sala
+      salasContainer.style.display = "flex";
+      spanIdSala.textContent = `Sala: ${id}`; // Atualiza o texto com o ID da sala
+  } else {
+      // Exibe o container de conexão
+      connectContainer.style.display = "block";
+
+      // Oculta o container de informações da sala
+      salasContainer.style.display = "none";
+  }
 }
 
 // ------------------------------------------------------------------
@@ -285,7 +288,6 @@ function sairDaTransmissao() {
   //listaParticipantes.style.display = "none";
   divListaParticipantes.style.display = "none";
 
-  document.getElementById("status").innerText = "Status: Aguardando...";
 
   // 🔁 Reset geral de estados e buffers
   buffersAudios = {};
@@ -360,13 +362,19 @@ socket.on("transmissao_iniciada", (dados) => {
 });
 
 socket.on("audio_metadata", function (dados) {
+  const statusElement = document.getElementById("status");
+
+  const computedStyle = window.getComputedStyle(statusElement);
+  if (computedStyle.bottom === "-1px") {
+    logger.log("⬆️ Subindo status...");
+      subirStatus();
+  }
 
   logger.log("⬇️✅ Metadados recebidos:", dados);
 
   const id = dados.id_transmissao;
   const totalPedacos = dados.total_pedacos; // total_pedacos enviado do backend
 
-    
   // ⚠️ Isso é crucial!
   idTransmissaoAtual = id;
 
@@ -389,7 +397,24 @@ socket.on("audio_metadata", function (dados) {
   logger.log(`📊 [DEPOIS] Buffer criado/inicializado para ${id}:`, buffersAudios[id]);
 
   // Atualiza o status de recebimento
-  document.getElementById("status").innerText = `📥 Recebendo pedaço 0 de ${totalPedacos}`;
+  atualizarStatusComAnimacao(`📥 Recebendo pedaço 0 de ${totalPedacos}`);
+
+  // Remove a animação após um tempo para permitir reaplicação futura
+  setTimeout(() => {
+    statusElement.classList.remove("animacao-status");
+  }, 3000); // Tempo da animação em milissegundos
+
+  // Aguarda todos os pedaços serem recebidos antes de descer o status
+  const verificarRecebimento = setInterval(() => {
+    const buffer = buffersAudios[id];
+    if (buffer && buffer.recebidos === buffer.total) {
+      clearInterval(verificarRecebimento); // Para o intervalo quando todos os pedaços forem recebidos
+      setTimeout(() => {
+        descerStatus(); // Executa a animação de Descer o status após 3 segundos
+        console.log("Descer status executado após todos os pedaços serem recebidos e 3 segundos.");
+      }, 3000); // Aguarda 3 segundos antes de descer o status
+    }
+  }, 1000); // Verifica a cada 1 segundo
 });
 
 socket.on("audio_processed", function (dados) {
@@ -475,10 +500,9 @@ socket.on("audio_processed", function (dados) {
     // Configura o reprodutor de áudio
     reprodutorAudio.src = urlAudio;
     reprodutorAudio.onloadedmetadata = () => {
-      document.getElementById("status").innerText = "🎵 Áudio pronto!";
+      atualizarStatusComAnimacao("🎵 Áudio pronto!");
       reprodutorAudio.play().catch((err) => {
-        logger.warn("🔴 Falha na reprodução automática:", err);
-        document.getElementById("status").innerText = "Clique para reproduzir!";
+      logger.warn("🔴 Falha na reprodução automática:", err);
       });
     };
 
@@ -505,16 +529,7 @@ socket.on("iniciar_reproducao", function (dados) {
   estaTocando = true;
   reprodutorAudio.currentTime = 0;
   tentarReproducao();
-  document.getElementById("status").innerText = "Reproduzindo sincronizado!";
  }
-});
-
-socket.on("player_control", function(dados) {
-  // Ignora comandos originados neste cliente
-  if (dados.originador === socket.id) return;
-
-  if (!validarComando(dados)) return;
-  executarComandoSincronizado(dados);
 });
 
 socket.on("player_control", function(dados) {

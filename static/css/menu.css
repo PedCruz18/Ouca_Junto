@@ -1,48 +1,103 @@
 /* =======================
    BOTÃO DE TOGGLE DO MENU
    ======================= */
-   .toggle-menu {
-    background: #ffffff;                 /* Fundo branco */
-    color: black;                       /* Texto preto */
-    border: none;                       /* Remove a borda padrão */
-    padding: 10px 15px;                 /* Espaçamento interno (vertical 10px, horizontal 15px) */
-    font-size: 18px;                    /* Tamanho da fonte */
-    cursor: pointer;                    /* Cursor de mãozinha ao passar por cima */
-    border-radius: 5px;                 /* Bordas levemente arredondadas */
-    margin-bottom: 10px;                /* Espaço abaixo do botão */
-    display: flex;                      /* Layout flexível para alinhar ícones/texto */
-    align-items: center;               /* Alinha os itens verticalmente ao centro */
-    justify-content: center;           /* Centraliza horizontalmente */
-    gap: 8px;                           /* Espaçamento entre ícone e texto */
-    position: relative;                /* Permite ajuste com o transform */
-    left: 50%;                          /* Move o botão para o centro */
-    transform: translateX(-50%);        /* Corrige o centro exato pela metade da largura */
+.toggle-menu {
+    background: #3498db; /* Fundo azul */
+    color: white; /* Texto branco */
+    border: none; /* Remove a borda padrão */
+    padding: 12px 20px; /* Espaçamento interno */
+    font-size: 18px; /* Tamanho da fonte */
+    cursor: pointer; /* Cursor de mãozinha */
+    border-radius: 50px; /* Bordas arredondadas */
+    margin-bottom: 10px; /* Espaço abaixo do botão */
+    display: flex; /* Layout flexível */
+    align-items: center; /* Centraliza verticalmente */
+    justify-content: center; /* Centraliza horizontalmente */
+    gap: 8px; /* Espaçamento entre ícone e texto */
+    position: relative; /* Permite ajustes com transform */
+    left: 50%; /* Move o botão para o centro */
+    transform: translateX(-50%); /* Corrige o alinhamento central */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2); /* Sombra suave */
+    transition: background-color 0.3s ease, transform 0.3s ease; /* Transições suaves */
+}
+
+.toggle-menu:hover {
+    background: #2980b9; /* Fundo azul mais escuro ao passar o mouse */
+    transform: translateX(-50%) scale(1.05); /* Leve aumento ao passar o mouse */
 }
 
 /* =======================
    CONTAINER DO MENU EXPANSÍVEL
    ======================= */
 .menu-container {
-    position: relative;                /* Posicionamento relativo ao seu contêiner */
-    top: -50px;                        /* Sobe o menu um pouco em relação ao botão */
-    background: rgba(30, 60, 114, 0.9);/* Fundo azul com transparência */
-    padding: 0;                        /* PADDING TEM QUE SER ATIVO AQUI. Sem espaçamento interno inicialmente */
-    border-radius: 10px;              /* Bordas arredondadas */
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Sombra sutil */
-    max-height: 0;                    /* Menu fechado por padrão (sem altura visível) */
-    max-width: 70%;                   /* Limita largura para 70% do contêiner pai */
-    overflow: hidden;                 /* Oculta o conteúdo quando fechado */
-    transition: 
-        max-height 0.5s ease-in-out,  /* Transição suave da altura */
-        padding 0.3s ease-in-out;     /* PADDING TEM QUE SER ATIVO AQUI. Transição suave do padding */
-    left: 50%;                        /* Centraliza horizontalmente */
-    transform: translateX(-50%);      /* Corrige o alinhamento exato ao centro */
+    position: relative; /* Posicionamento relativo ao contêiner pai */
+    top: -20px; /* Ajusta a posição vertical */
+    background: rgba(44, 62, 80, 0.95); /* Fundo azul escuro com transparência */
+    padding: 0; /* Sem espaçamento interno inicialmente */
+    border-radius: 15px; /* Bordas arredondadas */
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3); /* Sombra mais forte */
+    max-height: 0; /* Menu fechado por padrão */
+    max-width: 90%; /* Limita a largura a 90% do contêiner pai */
+    overflow: hidden; /* Oculta o conteúdo quando fechado */
+    transition: max-height 0.5s ease-in-out, padding 0.3s ease-in-out; /* Transições suaves */
+    left: 50%; /* Centraliza horizontalmente */
+    transform: translateX(-50%); /* Corrige o alinhamento central */
 }
 
 /* =======================
    ESTILO DO MENU QUANDO ABERTO
    ======================= */
 .menu-aberto {
-    max-height: 120px;                /* Define altura visível do menu */
-    max-width: 70%;                   /* Mantém largura igual à versão fechada */
+    max-height: 200px; /* Define a altura visível do menu */
+    padding: 15px; /* Adiciona espaçamento interno */
+}
+
+/* =======================
+   ITENS DO MENU
+   ======================= */
+.file-upload-container {
+    display: flex; /* Layout flexível */
+    flex-direction: column; /* Organiza os itens em coluna */
+    align-items: center; /* Centraliza os itens horizontalmente */
+    gap: 10px; /* Espaçamento entre os itens */
+}
+
+.file-input {
+    width: 100%; /* Largura total */
+    max-width: 300px; /* Largura máxima */
+    padding: 10px; /* Espaçamento interno */
+    font-size: 16px; /* Tamanho da fonte */
+    border: 2px solid #bdc3c7; /* Borda cinza clara */
+    border-radius: 8px; /* Bordas arredondadas */
+    outline: none; /* Remove o contorno padrão */
+    transition: border-color 0.3s ease, box-shadow 0.3s ease; /* Transições suaves */
+}
+
+.file-input:focus {
+    border-color: #3498db; /* Borda azul ao focar */
+    box-shadow: 0 0 8px rgba(52, 152, 219, 0.5); /* Sombra azul suave */
+}
+
+.send-button {
+    width: 100%; /* Largura total */
+    max-width: 300px; /* Largura máxima igual à do input */
+    padding: 10px; /* Espaçamento interno igual ao do input */
+    font-size: 16px; /* Tamanho da fonte igual ao do input */
+    background: #2ecc71; /* Fundo verde */
+    color: white; /* Texto branco */
+    border: none; /* Remove a borda padrão */
+    border-radius: 8px; /* Bordas arredondadas iguais às do input */
+    cursor: pointer; /* Cursor de mãozinha */
+    transition: background-color 0.3s ease, transform 0.3s ease; /* Transições suaves */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2); /* Sombra suave */
+}
+
+.send-button:hover {
+    background: #27ae60; /* Fundo verde mais escuro ao passar o mouse */
+    transform: scale(1.05); /* Leve aumento ao passar o mouse */
+}
+
+.titulo-principal {
+    font-weight: bold; /* Texto em negrito */
+    color: #ffffff; /* Cor do texto */
 }

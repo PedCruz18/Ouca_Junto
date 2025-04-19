@@ -8,8 +8,11 @@
 /* Estrutura geral da página: containers, colunas, grids */
 @import url("layout.css");
 
-/* Estilo do rótulo de informações */
-@import url("layout.css");
+/* Estilo para pag auxiliares */
+@import url("info.css");
+
+/* Estilo para o rotulo */
+@import url("status.css");
 
 /* Barra de navegação principal fixa no topo */
 @import url("navbar.css");

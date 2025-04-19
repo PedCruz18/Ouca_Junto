@@ -1,7 +1,58 @@
-/* =======================
-   RÓTULO DE INFORMAÇÕES
-   ======================= */#status {
-    margin-top: 15px; /* Adiciona um espaço de 15px acima do elemento com o id "status" */
-    font-size: 1.1em; /* Define o tamanho da fonte para 1.1 vezes o tamanho padrão */
-    font-weight: bold; /* Torna o texto em "status" em negrito */
+/* ===== Estilo para o rótulo de status ===== */
+.status {
+    position: fixed; /* Fixa o rótulo na tela */
+    bottom: 110px; /* Posição padrão acima do reprodutor */
+    left: 50%; /* Centraliza horizontalmente */
+    transform: translateX(-50%); /* Ajusta o alinhamento central */
+    background-color: #2a5298; /* Fundo azul escuro */
+    color: white; /* Texto branco */
+    padding: 8px 16px; /* Espaçamento interno */
+    border-radius: 8px; /* Bordas arredondadas */
+    font-size: 14px; /* Tamanho da fonte */
+    font-family: Arial, sans-serif; /* Fonte limpa e legível */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Sombra para destaque */
+    z-index: -1; /* Garante que o rótulo fique acima do reprodutor */
+    text-align: center; /* Centraliza o texto */
+    max-width: 90%; /* Limita a largura em telas menores */
+    white-space: nowrap; /* Evita quebra de linha */
+    overflow: hidden; /* Oculta texto extra */
+    text-overflow: ellipsis; /* Adiciona reticências ao texto longo */
+    transition: all 0.3s ease; /* Transição suave para mudanças */
 }
+
+/* Animação inicial para subir o rótulo */
+@keyframes InitialStatus {
+    0% {
+        bottom: -1px; /* Começa fora da tela, abaixo */
+        opacity: 0; /* Invisível no início */
+    }
+    100% {
+        bottom: 110px; /* Posição final acima do reprodutor */
+        opacity: 1; /* Totalmente visível */
+    }
+}
+
+/* Animação para piscar a cor verde */
+@keyframes piscarVerde {
+    0% {
+        background-color: #2a5298; /* Cor inicial (azul escuro) */
+    }
+    50% {
+        background-color: #28a745; /* Cor intermediária (verde) */
+    }
+    100% {
+        background-color: #2a5298; /* Volta para a cor inicial */
+    }
+}
+
+
+/* Classe para ativar a animação inicial */
+.status.inicial {
+    animation: InitialStatus 1s ease-out;
+}
+
+/* Classe para ativar a animação ao sofrer alterações */
+.status.animar {
+    animation: piscarVerde 1s ease-in-out;
+}
+

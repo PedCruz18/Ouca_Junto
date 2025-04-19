@@ -31,16 +31,18 @@
             
             <ul class="navbar-menu">
 
-                <div id="conectar">
-                    <input type="text" id="idTransmissao" placeholder="Digite o ID da SALA">
-                    <button onclick="conectarComoOuvinte()">Conectar</button>
+                <div id="conectar-container" class="conectar-container">
+                    <div class="input-group">
+                        <input type="text" id="idTransmissao" placeholder="Digite o ID da SALA" class="input-text">
+                        <button onclick="conectarComoOuvinte()" class="connect-button">Conectar</button>
+                    </div>
                 </div>
-                
-                <div id="salaInfo" style="display: none; align-items: center;">
+
+                <div id="salaInfo-container" class="sala-info-container">
                     <span id="idSala" class="id-sala"></span>
                     <button onclick="sairDaTransmissao()" class="sair-button">Sair</button>
-                </div>                
-
+                </div>
+                
                 <!-- Lista de Participantes -->
                 <div id="listaParticipantes" class="participantes-container">
                     <strong>Participantes:</strong>
@@ -61,9 +63,9 @@
 
     <!-- Conteúdo Central -->
     <main class="main-content">
-        <h1>Transmissor</h1>
+        <h1 class="titulo-principal">O que vamos ouvir?</h1>
 
-        <audio id="reprodutorAudio" controls></audio>
+        <audio id="reprodutorAudio" class="audio-fixo" controls controlsList="nodownload noplaybackrate"></audio>
 
         <button class="toggle-menu" onclick="alternarMenu()">
             <i class="fas fa-chevron-down"></i>
@@ -78,12 +80,12 @@
             </div>
         </div>
 
-        <p id="status">Status: Aguardando...</p>
+        <p id="status" class="status">Status: Aguardando...</p>
     </main>
 
     <!-- Rodapé -->
     <footer>
-        <p>OuçaJunto V0.0.57 - Todos Direitos Reservados.</p>
+        <p>OuçaJunto V0.0.58 - Todos Direitos Reservados.</p>
     </footer>
 
     <!-- Scripts -->
